@@ -40,47 +40,109 @@ const EXERCISES = [
 ];
 
 const DAILY_LIMIT = 100;
-const TOKEN = "PEDULI";
+const TOKEN       = "PEDULI";
 
 // ── Railway backend URL ───────────────────────────────────────────────────────
-// Change this to your actual Railway URL after deployment.
-// During local dev, use: http://localhost:3001
 const REWARD_API_URL = "https://peduli-backend-production.up.railway.app";
 
 /* ──────────────────────────────────────────────
-   BLOCKCHAIN REWARD — calls Railway backend
-   Called after exercise completes.
-   Non-blocking: never freezes the UI.
+   ★ DATABASE API HELPERS ★
+   These replace localStorage for all user data.
+   localStorage is kept only as a session cache
+   so the app feels instant.
 ──────────────────────────────────────────────── */
-async function sendBlockchainReward(userWallet, reps, exerciseId) {
-  // No wallet = can't send — user needs to register one in Profile
-  if (!userWallet || reps <= 0) {
-    return { success: false, error: "No wallet registered" };
-  }
+
+// Save or update user in Railway PostgreSQL
+async function apiSaveUser(user) {
   try {
-    const response = await fetch(`${REWARD_API_URL}/api/reward`, {
+    const res = await fetch(`${REWARD_API_URL}/api/users/save`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userWallet,   // user.wallet from Profile page
-        reps,         // actual reps earned (after frontend daily-limit trim)
-        exerciseId,   // exercise.id — e.g. "squats", "jumping-jacks"
+      body:    JSON.stringify({
+        email:  user.email,
+        name:   user.name,
+        wallet: user.wallet || "",
       }),
     });
-    const data = await response.json();
-    return data; // { success, tokensEarned, txHash, polygonScan, ... }
+    return await res.json();
   } catch (err) {
-    console.error("Reward API unreachable:", err);
+    console.error("Could not save user to DB:", err);
+    return null;
+  }
+}
+
+// Load user from Railway PostgreSQL by email
+async function apiLoadUser(email) {
+  try {
+    const res = await fetch(`${REWARD_API_URL}/api/users/${encodeURIComponent(email)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    // Normalise DB column names to match what the app expects
+    return {
+      email:             data.email,
+      name:              data.name,
+      wallet:            data.wallet            || "",
+      createdAt:         data.created_at,
+      lastActive:        data.last_active,
+      totalTokens:       data.total_tokens      || 0,
+      tokensTransferred: data.tokens_transferred|| 0,
+      history:           (data.history || []).map(h => ({
+        date:       h.created_at,
+        exerciseId: h.exercise_id,
+        reps:       h.reps,
+        tokens:     h.tokens,
+        txHash:     h.tx_hash,
+      })),
+      dailyCount: {}, // fetched separately per exercise
+    };
+  } catch (err) {
+    console.error("Could not load user from DB:", err);
+    return null;
+  }
+}
+
+// Get daily remaining from Railway PostgreSQL
+async function apiGetDailyRemaining(wallet, exerciseId) {
+  if (!wallet) return DAILY_LIMIT;
+  try {
+    const res  = await fetch(`${REWARD_API_URL}/api/daily/${wallet}/${exerciseId}`);
+    const data = await res.json();
+    return data.remainingToday ?? DAILY_LIMIT;
+  } catch {
+    return DAILY_LIMIT;
+  }
+}
+
+// Send blockchain reward via Railway
+async function sendBlockchainReward(userWallet, reps, exerciseId, email) {
+  if (!userWallet || reps <= 0) return { success: false, error: "No wallet" };
+  try {
+    const res  = await fetch(`${REWARD_API_URL}/api/reward`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ userWallet, reps, exerciseId, email }),
+    });
+    return await res.json();
+  } catch (err) {
     return { success: false, error: "Could not reach reward server" };
   }
 }
 
 /* ──────────────────────────────────────────────
+   LOCAL CACHE HELPERS
+   localStorage is now just a fast cache so the
+   app feels instant — truth lives in the DB.
+──────────────────────────────────────────────── */
+const load     = k     => { try { return JSON.parse(localStorage.getItem("pdl_" + k)); } catch { return null; } };
+const save     = (k,v) => localStorage.setItem("pdl_" + k, JSON.stringify(v));
+const todayKey = ()    => new Date().toISOString().split("T")[0];
+
+/* ──────────────────────────────────────────────
    WALLET VALIDATION
 ──────────────────────────────────────────────── */
-const WALLET_REGEX = /^0x[0-9a-fA-F]{40}$/;
+const WALLET_REGEX  = /^0x[0-9a-fA-F]{40}$/;
 const isValidWallet = addr => WALLET_REGEX.test(addr);
-const walletStatus = addr => {
+const walletStatus  = addr => {
   if (!addr) return null;
   if (!addr.startsWith("0x")) return "noprefix";
   const hex = addr.slice(2);
@@ -88,34 +150,6 @@ const walletStatus = addr => {
   if (hex.length > 40) return "long";
   if (!/^[0-9a-fA-F]+$/.test(hex)) return "badchars";
   return "valid";
-};
-
-/* ──────────────────────────────────────────────
-   STORAGE HELPERS
-──────────────────────────────────────────────── */
-const load     = k     => { try { return JSON.parse(localStorage.getItem("pdl_" + k)); } catch { return null; } };
-const save     = (k,v) => localStorage.setItem("pdl_" + k, JSON.stringify(v));
-const todayKey = ()    => new Date().toISOString().split("T")[0];
-
-const loadUsers = ()     => load("users_registry") || [];
-const saveUsers = list   => save("users_registry", list);
-
-const upsertUserRegistry = (user) => {
-  const list = loadUsers();
-  const idx  = list.findIndex(u => u.email === user.email);
-  const record = {
-    email:             user.email,
-    name:              user.name,
-    wallet:            user.wallet            || "",
-    createdAt:         user.createdAt         || new Date().toISOString(),
-    lastActive:        new Date().toISOString(),
-    totalTokens:       user.totalTokens       || 0,
-    tokensTransferred: user.tokensTransferred || 0,
-    history:           user.history           || [],
-    dailyCount:        user.dailyCount        || {},
-  };
-  if (idx >= 0) list[idx] = record; else list.push(record);
-  saveUsers(list);
 };
 
 /* ──────────────────────────────────────────────
@@ -152,73 +186,45 @@ class RepDetector {
 }
 
 /* ──────────────────────────────────────────────
-   SHARED UI
+   SHARED UI COMPONENTS
 ──────────────────────────────────────────────── */
 function WalletInput({ value, onChange, inputStyle = {}, dark = false }) {
   const status = walletStatus(value);
   const hex    = value ? value.slice(2) : "";
-
   const statusColor = {
-    valid:    dark ? "#4ade80" : "#16a34a",
-    short:    dark ? "#fb923c" : "#ea580c",
-    long:     dark ? "#f87171" : "#dc2626",
-    badchars: dark ? "#f87171" : "#dc2626",
-    noprefix: dark ? "#f87171" : "#dc2626",
-  }[status] || (dark ? "#64748b" : "#94a3b8");
-
-  const statusMsg = !status ? null
-    : status === "short"    ? `${hex.length}/40 hex characters — ${40 - hex.length} more needed`
-    : status === "long"     ? `Too long — ${hex.length}/40 hex chars (remove ${hex.length - 40})`
-    : status === "badchars" ? "Invalid characters — only 0–9 and a–f allowed"
-    : status === "noprefix" ? "Must start with 0x"
-    : "Valid Polygon / Ethereum address ✓";
-
-  const borderColor = !status ? (dark ? "#1e3a5f" : "#dbeafe")
-    : status === "valid"    ? (dark ? "#16a34a" : "#86efac")
-    : (dark ? "#7f1d1d" : "#fca5a5");
-
-  return (
+    valid:"#16a34a",short:"#ea580c",long:"#dc2626",badchars:"#dc2626",noprefix:"#dc2626",
+  }[status]||(dark?"#64748b":"#94a3b8");
+  const statusMsg = !status?null
+    :status==="short"   ?`${hex.length}/40 hex characters — ${40-hex.length} more needed`
+    :status==="long"    ?`Too long — ${hex.length}/40 hex chars`
+    :status==="badchars"?"Invalid characters — only 0–9 and a–f allowed"
+    :status==="noprefix"?"Must start with 0x"
+    :"Valid Polygon / Ethereum address ✓";
+  const borderColor=!status?(dark?"#1e3a5f":"#dbeafe"):status==="valid"?(dark?"#16a34a":"#86efac"):(dark?"#7f1d1d":"#fca5a5");
+  return(
     <div>
-      <div style={{ position: "relative" }}>
-        <input
-          value={value}
-          onChange={e => onChange(e.target.value.trim())}
-          placeholder="0x..."
-          maxLength={42}
-          autoComplete="off"
-          spellCheck={false}
-          style={{ ...inputStyle, fontFamily: "monospace", fontSize: 12, border: `1.5px solid ${borderColor}`, paddingRight: 48 }}
-        />
-        <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: dark ? "#0d1424" : "#f1f5f9", border: `1px solid ${borderColor}`, borderRadius: 6, padding: "2px 6px", pointerEvents: "none" }}>
-          <span style={{ fontFamily: "monospace", fontSize: 10, color: statusColor, fontWeight: 700 }}>
-            {value.length}/42
-          </span>
+      <div style={{position:"relative"}}>
+        <input value={value} onChange={e=>onChange(e.target.value.trim())} placeholder="0x..." maxLength={42} autoComplete="off" spellCheck={false}
+          style={{...inputStyle,fontFamily:"monospace",fontSize:12,border:`1.5px solid ${borderColor}`,paddingRight:48}}/>
+        <div style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:dark?"#0d1424":"#f1f5f9",border:`1px solid ${borderColor}`,borderRadius:6,padding:"2px 6px",pointerEvents:"none"}}>
+          <span style={{fontFamily:"monospace",fontSize:10,color:statusColor,fontWeight:700}}>{value.length}/42</span>
         </div>
       </div>
-      {statusMsg && (
-        <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5, marginBottom: 4 }}>
-          <span style={{ fontSize: 12 }}>{status === "valid" ? "✅" : "⚠️"}</span>
-          <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: statusColor, fontWeight: 600 }}>{statusMsg}</span>
-        </div>
-      )}
-      {status === "short" && hex.length > 0 && (
-        <div style={{ background: dark ? "#1e3a5f" : "#e2e8f0", borderRadius: 999, height: 3, marginTop: 4, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${(hex.length / 40) * 100}%`, background: `linear-gradient(90deg,${T.primaryLt},${T.primary})`, borderRadius: 999, transition: "width 0.2s" }} />
-        </div>
-      )}
+      {statusMsg&&<div style={{display:"flex",alignItems:"center",gap:5,marginTop:5}}>
+        <span style={{fontSize:12}}>{status==="valid"?"✅":"⚠️"}</span>
+        <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:statusColor,fontWeight:600}}>{statusMsg}</span>
+      </div>}
+      {status==="short"&&hex.length>0&&<div style={{background:dark?"#1e3a5f":"#e2e8f0",borderRadius:999,height:3,marginTop:4,overflow:"hidden"}}>
+        <div style={{height:"100%",width:`${(hex.length/40)*100}%`,background:`linear-gradient(90deg,${T.primaryLt},${T.primary})`,borderRadius:999,transition:"width 0.2s"}}/>
+      </div>}
     </div>
   );
 }
 
 function BottomNav({ page, navigate }) {
-  const tabs = [
-    { id:"home",            icon:"🏠", label:"Home" },
-    { id:"exercise-select", icon:"🏃", label:"Exercise" },
-    { id:"dashboard",       icon:"🪙", label:"Rewards" },
-    { id:"profile",         icon:"👤", label:"Profile" },
-    { id:"disclaimer",      icon:"ℹ️",  label:"About" },
-  ];
-  return (
+  const tabs=[{id:"home",icon:"🏠",label:"Home"},{id:"exercise-select",icon:"🏃",label:"Exercise"},
+    {id:"dashboard",icon:"🪙",label:"Rewards"},{id:"profile",icon:"👤",label:"Profile"},{id:"disclaimer",icon:"ℹ️",label:"About"}];
+  return(
     <nav style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:500,background:"#fff",borderTop:`2px solid ${T.primaryPale}`,display:"flex",zIndex:999,boxShadow:"0 -4px 24px rgba(26,93,168,0.10)"}}>
       {tabs.map(t=>(
         <button key={t.id} onClick={()=>navigate(t.id)} style={{flex:1,padding:"10px 0 8px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:page===t.id?T.primary:"#94a3b8",transition:"all 0.2s"}}>
@@ -232,8 +238,8 @@ function BottomNav({ page, navigate }) {
 }
 
 function TokenBadge({ amount, size="md" }) {
-  const sz = size==="lg"?{f:26,p:"8px 18px",r:16}:{f:13,p:"4px 10px",r:8};
-  return (
+  const sz=size==="lg"?{f:26,p:"8px 18px",r:16}:{f:13,p:"4px 10px",r:8};
+  return(
     <span style={{display:"inline-flex",alignItems:"center",gap:6,background:`linear-gradient(135deg,${T.accentBg},${T.accentBrd})`,border:`1.5px solid ${T.accent}`,borderRadius:sz.r,padding:sz.p,fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:sz.f,color:T.accentDk}}>
       🪙 {amount?.toLocaleString?.()||amount} {TOKEN}
     </span>
@@ -248,29 +254,25 @@ function Card({ children, style={} }) {
    HOME PAGE
 ──────────────────────────────────────────────── */
 function HomePage({ navigate, user }) {
-  const total    = user?.totalTokens || 0;
-  const tapRef   = useRef(0);
-  const tapTimer = useRef(null);
-
-  const handleTitleTap = () => {
-    tapRef.current += 1;
-    clearTimeout(tapTimer.current);
-    if (tapRef.current >= 7) { tapRef.current = 0; navigate("admin"); return; }
-    tapTimer.current = setTimeout(() => { tapRef.current = 0; }, 3000);
+  const total=user?.totalTokens||0;
+  const tapRef=useRef(0),tapTimer=useRef(null);
+  const handleTitleTap=()=>{
+    tapRef.current+=1;clearTimeout(tapTimer.current);
+    if(tapRef.current>=7){tapRef.current=0;navigate("admin");return;}
+    tapTimer.current=setTimeout(()=>{tapRef.current=0;},3000);
   };
-
-  return (
+  return(
     <div style={{minHeight:"100vh",background:`linear-gradient(160deg,${T.heroFrom} 0%,${T.heroMid} 40%,${T.heroTo} 100%)`,padding:"0 0 80px"}}>
       <div style={{padding:"40px 24px 28px",textAlign:"center"}}>
         <div style={{fontSize:56,marginBottom:8}}>🤝</div>
         <h1 onClick={handleTitleTap} style={{fontFamily:"'Unbounded',sans-serif",fontWeight:900,fontSize:32,color:"#fff",margin:"0 0 6px",letterSpacing:"-1px",lineHeight:1.1,cursor:"default",userSelect:"none"}}>PEDULI</h1>
         <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:14,margin:"0 0 20px",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase"}}>Exercise · Earn · Empower</p>
-        {user ? (
+        {user?(
           <div style={{background:"rgba(255,255,255,0.08)",borderRadius:16,padding:"14px 20px",display:"inline-block",backdropFilter:"blur(8px)"}}>
             <p style={{color:T.glowSoft,fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,margin:"0 0 4px"}}>Welcome back, {user.name?.split(" ")[0]}! 👋</p>
             <TokenBadge amount={total} size="lg"/>
           </div>
-        ) : (
+        ):(
           <div style={{background:"rgba(255,255,255,0.08)",borderRadius:16,padding:"14px 20px",backdropFilter:"blur(8px)"}}>
             <p style={{color:T.glowSoft,fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,margin:0}}>🎁 Every rep earns you <strong>1 PEDULI token</strong>.<br/>Register to save your rewards!</p>
           </div>
@@ -309,12 +311,11 @@ function HomePage({ navigate, user }) {
    EXERCISE SELECT PAGE
 ──────────────────────────────────────────────── */
 function ExerciseSelectPage({ navigate, user, getDailyRemaining }) {
-  const [selected, setSelected] = useState(null);
-  const [target, setTarget]     = useState(20);
-  const remaining = selected ? getDailyRemaining(selected.id) : 0;
-  const maxTarget = Math.min(remaining, 100);
-
-  return (
+  const [selected,setSelected]=useState(null);
+  const [target,setTarget]=useState(20);
+  const remaining=selected?getDailyRemaining(selected.id):0;
+  const maxTarget=Math.min(remaining,100);
+  return(
     <div style={{minHeight:"100vh",background:T.surface,paddingBottom:80}}>
       <div style={{background:`linear-gradient(135deg,${T.primary},${T.primaryDk})`,padding:"28px 20px 20px"}}>
         <h1 style={{fontFamily:"'Unbounded',sans-serif",color:"#fff",fontSize:22,margin:0,fontWeight:900}}>Pick Exercise</h1>
@@ -324,7 +325,7 @@ function ExerciseSelectPage({ navigate, user, getDailyRemaining }) {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
           {EXERCISES.map(ex=>{
             const rem=getDailyRemaining(ex.id),sel=selected?.id===ex.id;
-            return (
+            return(
               <button key={ex.id} onClick={()=>{setSelected(ex);setTarget(Math.min(20,rem));}}
                 style={{background:sel?ex.color:"#fff",border:sel?`2px solid ${ex.color}`:`2px solid ${T.primaryPale}`,borderRadius:16,padding:"16px 12px",cursor:rem===0?"not-allowed":"pointer",opacity:rem===0?0.4:1,textAlign:"center",transition:"all 0.2s",boxShadow:sel?`0 4px 16px ${ex.color}40`:"none"}}>
                 <div style={{fontSize:30,marginBottom:6}}>{ex.emoji}</div>
@@ -362,8 +363,6 @@ function ExerciseSelectPage({ navigate, user, getDailyRemaining }) {
 
 /* ──────────────────────────────────────────────
    EXERCISE PAGE
-   — addTokens updates localStorage (instant)
-   — sendBlockchainReward calls Railway (async)
 ──────────────────────────────────────────────── */
 function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDailyRemaining }) {
   const videoRef=useRef(null),canvasRef=useRef(null);
@@ -375,40 +374,21 @@ function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDail
   const [cameraError,setCameraError]=useState(false);
   const [completed,setCompleted]=useState(false);
   const [tokensEarned,setTokensEarned]=useState(0);
-
-  // Blockchain transfer status
-  const [txStatus,setTxStatus]   = useState(null); // null | "pending" | "success" | "failed" | "no-wallet"
-  const [txHash,setTxHash]       = useState(null);
-  const [txError,setTxError]     = useState(null);
-
+  const [txStatus,setTxStatus]=useState(null);
+  const [txHash,setTxHash]=useState(null);
   const countRef=useRef(0),completedRef=useRef(false);
   const effectiveTarget=Math.min(targetReps,getDailyRemaining(exercise.id));
 
-  // ── Trigger reward: local save + blockchain transfer ────────────────────────
-  const triggerReward = async (exerciseId, repCount) => {
-    // 1. Save to localStorage immediately (instant, no waiting)
-    const result = addTokens(exerciseId, repCount);
-    const earned  = result?.tokens ?? repCount;
-    setTokensEarned(earned);
-    setCompleted(true);
-
-    // 2. Send to blockchain via Railway (async — doesn't block UI)
-    if (!user?.wallet) {
-      setTxStatus("no-wallet");
-      return;
-    }
-    if (earned <= 0) return;
-
+  const triggerReward=async(exerciseId,repCount)=>{
+    const result=addTokens(exerciseId,repCount);
+    const earned=result?.tokens??repCount;
+    setTokensEarned(earned);setCompleted(true);
+    if(!user?.wallet){setTxStatus("no-wallet");return;}
+    if(earned<=0)return;
     setTxStatus("pending");
-    const txResult = await sendBlockchainReward(user.wallet, earned, exerciseId);
-
-    if (txResult.success) {
-      setTxStatus("success");
-      setTxHash(txResult.txHash);
-    } else {
-      setTxStatus("failed");
-      setTxError(txResult.error || "Transfer failed");
-    }
+    const txResult=await sendBlockchainReward(user.wallet,earned,exerciseId,user.email);
+    if(txResult.success){setTxStatus("success");setTxHash(txResult.txHash);}
+    else{setTxStatus("failed");}
   };
 
   useEffect(()=>{
@@ -446,7 +426,7 @@ function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDail
                 countRef.current=r.count;setCount(r.count);
                 if(r.count>=effectiveTarget&&!completedRef.current){
                   completedRef.current=true;
-                  triggerReward(exercise.id, r.count);
+                  triggerReward(exercise.id,r.count);
                 }
               }
             }
@@ -463,79 +443,42 @@ function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDail
 
   const handleStop=()=>{
     cameraRef.current?.stop?.();poseRef.current?.close?.();
-    if(count>0&&!completed) triggerReward(exercise.id, count);
-    else if(count===0) navigate("exercise-select");
+    if(count>0&&!completed)triggerReward(exercise.id,count);
+    else if(count===0)navigate("exercise-select");
   };
 
-  // ── Completion screen ───────────────────────────────────────────────────────
-  if(completed) return(
+  if(completed)return(
     <div style={{minHeight:"100vh",background:`linear-gradient(160deg,${T.heroFrom},${T.heroMid})`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
       <div style={{fontSize:72,marginBottom:16}}>🎉</div>
       <h1 style={{fontFamily:"'Unbounded',sans-serif",color:"#fff",fontSize:26,fontWeight:900,margin:"0 0 8px"}}>Exercise Complete!</h1>
       <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:16,margin:"0 0 24px"}}>{count} {exercise.name} completed</p>
-
-      {/* Tokens earned badge */}
       <div style={{background:"rgba(255,255,255,0.10)",borderRadius:20,padding:"20px 32px",marginBottom:16}}>
         <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.accentBrd,fontSize:13,margin:"0 0 8px"}}>TOKENS EARNED</p>
         <TokenBadge amount={tokensEarned} size="lg"/>
         {!user&&<p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#fca5a5",fontSize:11,marginTop:10}}>⚠️ Register to save your rewards!</p>}
       </div>
-
-      {/* ── Blockchain transfer status ────────────────────────────────────── */}
-      {txStatus === "pending" && (
-        <div style={{background:"rgba(96,165,250,0.12)",border:"1px solid rgba(96,165,250,0.3)",borderRadius:14,padding:"14px 20px",marginBottom:16,width:"100%",maxWidth:320}}>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:13,margin:0}}>
-            ⏳ Sending {tokensEarned} PEDULI to your wallet…
-          </p>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#64748b",fontSize:11,margin:"4px 0 0"}}>This takes 15–30 seconds on Polygon</p>
-        </div>
-      )}
-
-      {txStatus === "success" && txHash && (
-        <div style={{background:"rgba(34,197,94,0.10)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:14,padding:"14px 20px",marginBottom:16,width:"100%",maxWidth:320}}>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#4ade80",fontSize:13,margin:"0 0 6px",fontWeight:700}}>
-            ✅ {tokensEarned} PEDULI sent to your wallet!
-          </p>
-          <a
-            href={`https://polygonscan.com/tx/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{fontFamily:"monospace",color:T.glow,fontSize:10,wordBreak:"break-all",textDecoration:"none"}}
-          >
-            🔍 View on PolygonScan ↗
-          </a>
-        </div>
-      )}
-
-      {txStatus === "failed" && (
-        <div style={{background:"rgba(239,68,68,0.10)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:14,padding:"14px 20px",marginBottom:16,width:"100%",maxWidth:320}}>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#fca5a5",fontSize:13,margin:"0 0 4px",fontWeight:700}}>
-            ⚠️ Blockchain transfer failed
-          </p>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#64748b",fontSize:11,margin:0}}>
-            Your {tokensEarned} tokens are saved locally. Admin will retry the transfer.
-          </p>
-        </div>
-      )}
-
-      {txStatus === "no-wallet" && (
-        <div style={{background:"rgba(245,158,11,0.10)",border:`1px solid ${T.accentBrd}`,borderRadius:14,padding:"14px 20px",marginBottom:16,width:"100%",maxWidth:320}}>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.accent,fontSize:13,margin:"0 0 4px",fontWeight:700}}>
-            💡 No wallet linked yet
-          </p>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#64748b",fontSize:11,margin:0}}>
-            Add your Polygon wallet in Profile to receive tokens on-chain.
-          </p>
-        </div>
-      )}
-      {/* ── End blockchain status ─────────────────────────────────────────── */}
-
+      {txStatus==="pending"&&<div style={{background:"rgba(96,165,250,0.12)",border:"1px solid rgba(96,165,250,0.3)",borderRadius:14,padding:"14px 20px",marginBottom:16,width:"100%",maxWidth:320}}>
+        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:13,margin:0}}>⏳ Sending {tokensEarned} PEDULI to your wallet…</p>
+        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#64748b",fontSize:11,margin:"4px 0 0"}}>This takes 15–30 seconds on Polygon</p>
+      </div>}
+      {txStatus==="success"&&txHash&&<div style={{background:"rgba(34,197,94,0.10)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:14,padding:"14px 20px",marginBottom:16,width:"100%",maxWidth:320}}>
+        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#4ade80",fontSize:13,margin:"0 0 6px",fontWeight:700}}>✅ {tokensEarned} PEDULI sent to your wallet!</p>
+        <a href={`https://polygonscan.com/tx/${txHash}`} target="_blank" rel="noopener noreferrer"
+          style={{fontFamily:"monospace",color:T.glow,fontSize:10,wordBreak:"break-all",textDecoration:"none"}}>🔍 View on PolygonScan ↗</a>
+      </div>}
+      {txStatus==="failed"&&<div style={{background:"rgba(239,68,68,0.10)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:14,padding:"14px 20px",marginBottom:16,width:"100%",maxWidth:320}}>
+        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#fca5a5",fontSize:13,margin:"0 0 4px",fontWeight:700}}>⚠️ Blockchain transfer failed</p>
+        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#64748b",fontSize:11,margin:0}}>Your {tokensEarned} tokens are saved. Admin will retry.</p>
+      </div>}
+      {txStatus==="no-wallet"&&<div style={{background:"rgba(245,158,11,0.10)",border:`1px solid ${T.accentBrd}`,borderRadius:14,padding:"14px 20px",marginBottom:16,width:"100%",maxWidth:320}}>
+        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.accent,fontSize:13,margin:"0 0 4px",fontWeight:700}}>💡 No wallet linked yet</p>
+        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#64748b",fontSize:11,margin:0}}>Add your Polygon wallet in Profile to receive tokens on-chain.</p>
+      </div>}
       <button onClick={()=>navigate("exercise-select")} style={{background:T.primary,color:"#fff",border:"none",borderRadius:14,padding:"14px 32px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:12}}>DO ANOTHER EXERCISE</button>
       <button onClick={()=>navigate("dashboard")} style={{background:"transparent",color:T.glow,border:`1px solid ${T.primaryLt}`,borderRadius:14,padding:"12px 32px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:600,fontSize:14,cursor:"pointer"}}>View My Rewards</button>
     </div>
   );
 
-  // ── Active exercise screen ──────────────────────────────────────────────────
   return(
     <div style={{position:"relative",height:"100vh",overflow:"hidden",background:"#000"}}>
       <video ref={videoRef} style={{display:"none"}} playsInline muted/>
@@ -561,11 +504,9 @@ function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDail
         <div style={{background:"rgba(255,255,255,0.10)",borderRadius:12,padding:"10px 16px",textAlign:"center"}}>
           <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#fff",fontSize:14,margin:0,fontWeight:500}}>{feedback}</p>
         </div>
-        {cameraError&&(
-          <div style={{marginTop:12,background:"rgba(239,68,68,0.15)",borderRadius:12,padding:"10px 14px",textAlign:"center"}}>
-            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#fca5a5",fontSize:12,margin:0}}>📷 Camera required to count reps. Please allow camera access and refresh.</p>
-          </div>
-        )}
+        {cameraError&&<div style={{marginTop:12,background:"rgba(239,68,68,0.15)",borderRadius:12,padding:"10px 14px",textAlign:"center"}}>
+          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#fca5a5",fontSize:12,margin:0}}>📷 Camera required. Please allow camera access and refresh.</p>
+        </div>}
       </div>
     </div>
   );
@@ -585,11 +526,10 @@ function DashboardPage({ user, navigate }) {
   );
   const history=user.history||[];
   const today=todayKey();
-  const todayTokens=history.filter(h=>h.date.startsWith(today)).reduce((s,h)=>s+h.tokens,0);
+  const todayTokens=history.filter(h=>h.date?.startsWith(today)).reduce((s,h)=>s+h.tokens,0);
   const byDate={};
-  history.forEach(h=>{const d=h.date.split("T")[0];byDate[d]=(byDate[d]||0)+h.tokens;});
+  history.forEach(h=>{const d=h.date?.split("T")[0];if(d)byDate[d]=(byDate[d]||0)+h.tokens;});
   const dateEntries=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,7);
-
   return(
     <div style={{minHeight:"100vh",background:T.surface,paddingBottom:80}}>
       <div style={{background:`linear-gradient(135deg,${T.primary},${T.primaryDk})`,padding:"28px 20px 24px"}}>
@@ -634,7 +574,7 @@ function DashboardPage({ user, navigate }) {
         {history.length>0&&(
           <Card>
             <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,color:T.primary,margin:"0 0 12px",textTransform:"uppercase",letterSpacing:"0.06em"}}>📝 Recent Sessions</p>
-            {history.slice(-8).reverse().map((h,i)=>{
+            {history.slice(0,8).map((h,i)=>{
               const ex=EXERCISES.find(e=>e.id===h.exerciseId);
               return(
                 <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:`1px solid ${T.primaryPale}`}}>
@@ -659,30 +599,33 @@ function DashboardPage({ user, navigate }) {
 /* ──────────────────────────────────────────────
    PROFILE PAGE
 ──────────────────────────────────────────────── */
-function ProfilePage({ user, saveUser }) {
+function ProfilePage({ user, saveUser, navigate }) {
   const [form,setForm]=useState({name:user?.name||"",email:user?.email||"",wallet:user?.wallet||""});
   const [saved,setSaved]=useState(false);
+  const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
 
-  const handleSave=()=>{
+  const handleSave=async()=>{
     if(!form.name.trim())return setError("Please enter your name.");
     if(!form.email.includes("@"))return setError("Please enter a valid email.");
     if(form.wallet){
       const ws=walletStatus(form.wallet);
       if(ws!=="valid"){
         const hex=form.wallet.slice(2);
-        if(ws==="noprefix") return setError("Wallet address must start with 0x");
-        if(ws==="short")    return setError(`Address too short — ${hex.length}/40 hex characters entered after 0x. A valid Polygon address is exactly 42 characters long.`);
-        if(ws==="long")     return setError("Address too long — a valid Polygon address is exactly 42 characters (0x + 40 hex chars).");
-        if(ws==="badchars") return setError("Address contains invalid characters. Only digits 0–9 and letters a–f are allowed after 0x.");
+        if(ws==="noprefix")return setError("Wallet address must start with 0x");
+        if(ws==="short")return setError(`Address too short — ${hex.length}/40 hex characters entered.`);
+        if(ws==="long")return setError("Address too long — must be exactly 42 characters.");
+        if(ws==="badchars")return setError("Invalid characters — only 0–9 and a–f allowed after 0x.");
       }
     }
-    setError("");
+    setError("");setSaving(true);
     const updated={...user,...form,updatedAt:new Date().toISOString()};
     if(!updated.createdAt)updated.createdAt=new Date().toISOString();
     if(!updated.totalTokens)updated.totalTokens=0;
-    saveUser(updated);setSaved(true);setTimeout(()=>setSaved(false),3000);
+    await saveUser(updated);
+    setSaving(false);setSaved(true);setTimeout(()=>setSaved(false),3000);
   };
+
   const handleLogout=()=>{save("user",null);window.location.reload();};
   const inp={width:"100%",padding:"12px 14px",border:`1.5px solid ${T.primaryPale}`,borderRadius:10,fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:14,color:"#0f172a",outline:"none",boxSizing:"border-box",marginBottom:12};
 
@@ -705,13 +648,13 @@ function ProfilePage({ user, saveUser }) {
           <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#64748b",margin:"0 0 12px"}}>Required to receive PEDULI tokens on Polygon network</p>
           <WalletInput value={form.wallet} onChange={v=>setForm({...form,wallet:v})} inputStyle={inp}/>
           <div style={{background:T.accentBg,border:`1px solid ${T.accentBrd}`,borderRadius:10,padding:"10px 12px",marginTop:8}}>
-            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:T.accentDk,margin:0}}>💡 Use MetaMask or Trust Wallet on Polygon network. Your tokens will be airdropped to this address periodically.</p>
+            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:T.accentDk,margin:0}}>💡 Use MetaMask or Trust Wallet on Polygon network.</p>
           </div>
         </Card>
         {error&&<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:10,padding:"10px 14px",marginTop:12}}><p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:"#dc2626",margin:0}}>{error}</p></div>}
-        {saved&&<div style={{background:T.primaryBg,border:`1px solid ${T.glow}`,borderRadius:10,padding:"10px 14px",marginTop:12}}><p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:T.primary,margin:0}}>✅ Profile saved successfully!</p></div>}
-        <button onClick={handleSave} style={{width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:14,padding:"16px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",marginTop:14,letterSpacing:"0.02em"}}>
-          {user?"SAVE CHANGES":"CREATE ACCOUNT"}
+        {saved&&<div style={{background:T.primaryBg,border:`1px solid ${T.glow}`,borderRadius:10,padding:"10px 14px",marginTop:12}}><p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:T.primary,margin:0}}>✅ Profile saved to database!</p></div>}
+        <button onClick={handleSave} disabled={saving} style={{width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:14,padding:"16px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",marginTop:14,opacity:saving?0.7:1}}>
+          {saving?"SAVING…":user?"SAVE CHANGES":"CREATE ACCOUNT"}
         </button>
         {user&&<button onClick={handleLogout} style={{width:"100%",background:"transparent",color:"#ef4444",border:"1.5px solid #fca5a5",borderRadius:14,padding:"14px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:600,fontSize:14,cursor:"pointer",marginTop:10}}>Sign Out</button>}
       </div>
@@ -733,14 +676,14 @@ function DisclaimerPage() {
       <div style={{padding:16}}>
         {[
           ["About PEDULI","PEDULI is a Corporate Social Responsibility (CSR) and Social Enterprise initiative developed and operated by WargaTerra Enterprise. The PEDULI program is designed to incentivise physical health and wellness among underprivileged communities by rewarding physical exercise activities with digital tokens on the Polygon blockchain network."],
-          ["Not an Investment Product","The PEDULI token (ticker: PEDULI) is NOT an investment product, security, financial instrument, or store of value. It is a utility reward token issued solely as a participation incentive within the PEDULI wellness program. The PEDULI token is not intended to constitute a capital market product or regulated financial instrument under the laws of any jurisdiction, including Malaysia and the United States."],
-          ["No Investment Advice","Nothing on this platform or associated materials constitutes financial, investment, legal, or tax advice. WargaTerra Enterprise does not guarantee any monetary value, exchange rate, or return on any PEDULI tokens earned or held. Participation in this program should not be viewed as an investment opportunity."],
-          ["Token Value & Liquidity","Any value attributed to PEDULI tokens via third-party platforms such as Uniswap or other decentralised exchanges arises independently of WargaTerra Enterprise's actions. WargaTerra Enterprise makes no representations, warranties, or commitments regarding the market price, liquidity, or future value of PEDULI tokens. Token values may fluctuate or drop to zero."],
-          ["Participation Risks","Users acknowledge that participation in blockchain-based reward systems carries inherent risks, including but not limited to: technical failures, smart contract vulnerabilities, loss of private keys, regulatory changes, and complete loss of token value. Users participate entirely at their own risk."],
-          ["Health & Safety","The exercise activities facilitated by this application are intended for general wellness purposes. WargaTerra Enterprise strongly recommends that users consult a qualified medical professional before commencing any exercise programme, particularly those with pre-existing medical conditions, injuries, or health concerns. WargaTerra Enterprise accepts no liability for injury or health complications arising from exercise performed through this application."],
-          ["Data & Privacy","User data including email addresses and wallet addresses are stored locally on the user's device. WargaTerra Enterprise does not collect, store, or transmit personal data to external servers in this version of the application. Future versions may introduce cloud-based storage subject to a full Privacy Policy."],
-          ["Limitation of Liability","To the fullest extent permitted by applicable law, WargaTerra Enterprise and its directors, officers, employees, and agents shall not be liable for any direct, indirect, incidental, special, consequential, or punitive damages arising from or related to the use of the PEDULI platform or the PEDULI token."],
-          ["Regulatory Compliance","WargaTerra Enterprise reserves the right to suspend, modify, or terminate the PEDULI token programme at any time to ensure compliance with applicable laws and regulations. Users in jurisdictions where participation in blockchain token reward schemes is restricted or prohibited are advised not to participate."],
+          ["Not an Investment Product","The PEDULI token (ticker: PEDULI) is NOT an investment product, security, financial instrument, or store of value. It is a utility reward token issued solely as a participation incentive within the PEDULI wellness program."],
+          ["No Investment Advice","Nothing on this platform constitutes financial, investment, legal, or tax advice. WargaTerra Enterprise does not guarantee any monetary value, exchange rate, or return on any PEDULI tokens earned or held."],
+          ["Token Value & Liquidity","Any value attributed to PEDULI tokens via third-party platforms such as Uniswap arises independently of WargaTerra Enterprise's actions. Token values may fluctuate or drop to zero."],
+          ["Participation Risks","Users acknowledge that participation in blockchain-based reward systems carries inherent risks including technical failures, smart contract vulnerabilities, loss of private keys, and regulatory changes."],
+          ["Health & Safety","Exercise activities are for general wellness. Consult a medical professional before starting any exercise programme, particularly with pre-existing conditions."],
+          ["Data & Privacy","User data is stored securely in a private database. WargaTerra Enterprise does not sell or share personal data with third parties."],
+          ["Limitation of Liability","WargaTerra Enterprise shall not be liable for any damages arising from use of the PEDULI platform or token to the fullest extent permitted by law."],
+          ["Regulatory Compliance","WargaTerra Enterprise reserves the right to suspend or modify the PEDULI programme to ensure compliance with applicable laws."],
         ].map(([title,text])=>(
           <Card key={title} style={{marginBottom:12}}>
             <h3 style={{fontFamily:"'Unbounded',sans-serif",fontSize:12,color:T.primary,margin:"0 0 8px",fontWeight:700}}>{title.toUpperCase()}</h3>
@@ -750,7 +693,6 @@ function DisclaimerPage() {
         <Card style={{background:"#f8fafc",marginBottom:12}}>
           <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#94a3b8",margin:0,textAlign:"center",lineHeight:1.6}}>
             © {new Date().getFullYear()} <strong style={{color:"#475569"}}>WargaTerra Enterprise</strong>. All rights reserved.<br/>
-            PEDULI is a registered trademark of WargaTerra Enterprise.<br/>
             Last updated: {new Date().toLocaleDateString("en-MY",{year:"numeric",month:"long"})}
           </p>
         </Card>
@@ -760,7 +702,7 @@ function DisclaimerPage() {
 }
 
 /* ══════════════════════════════════════════════
-   ▓▓▓  ADMIN PANEL  ▓▓▓
+   ADMIN PANEL
 ══════════════════════════════════════════════ */
 const checkAdminPw = pw => pw === atob("cG9GZjQwMTYwJVBFRFVMSQ==");
 
@@ -768,12 +710,10 @@ function AdminLogin({ onSuccess, onCancel }) {
   const [pw,setPw]=useState("");
   const [err,setErr]=useState(false);
   const [shake,setShake]=useState(false);
-
   const attempt=()=>{
     if(checkAdminPw(pw)){onSuccess();}
     else{setErr(true);setShake(true);setPw("");setTimeout(()=>setShake(false),600);}
   };
-
   return(
     <div style={{minHeight:"100vh",background:"#060d1a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32}}>
       <div style={{animation:shake?"shakeX 0.5s ease":"none",width:"100%",maxWidth:340}}>
@@ -784,7 +724,7 @@ function AdminLogin({ onSuccess, onCancel }) {
         </div>
         <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setErr(false);}} onKeyDown={e=>e.key==="Enter"&&attempt()} placeholder="Enter admin password"
           style={{width:"100%",padding:"14px 16px",background:"#111827",border:`1.5px solid ${err?"#ef4444":"#1e3a5f"}`,borderRadius:12,color:"#fff",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:15,outline:"none",boxSizing:"border-box",marginBottom:8}}/>
-        {err&&<p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#ef4444",fontSize:12,margin:"0 0 12px"}}>❌ Incorrect password. Access denied.</p>}
+        {err&&<p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#ef4444",fontSize:12,margin:"0 0 12px"}}>❌ Incorrect password.</p>}
         <button onClick={attempt} style={{width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:12,padding:"14px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:10}}>UNLOCK CONSOLE</button>
         <button onClick={onCancel} style={{width:"100%",background:"transparent",color:"#475569",border:"1px solid #1e3a5f",borderRadius:12,padding:"12px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,cursor:"pointer"}}>← Return to App</button>
       </div>
@@ -793,50 +733,72 @@ function AdminLogin({ onSuccess, onCancel }) {
 }
 
 function AdminPanel({ onExit }) {
-  const [users,setUsers]       = useState(loadUsers());
+  const [users,setUsers]       = useState([]);
+  const [loading,setLoading]   = useState(true);
   const [search,setSearch]     = useState("");
   const [view,setView]         = useState("list");
   const [selected,setSelected] = useState(null);
   const [editForm,setEditForm] = useState({});
 
-  const refresh   = () => setUsers(loadUsers());
-  const totalEarned      = users.reduce((s,u)=>s+(u.totalTokens||0),0);
-  const totalTransferred = users.reduce((s,u)=>s+(u.tokensTransferred||0),0);
+  // ★ Fetch users from Railway database
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const res  = await fetch(`${REWARD_API_URL}/api/admin/users`);
+      const data = await res.json();
+      setUsers(data);
+    } catch (err) {
+      console.error("Could not load users:", err);
+    }
+    setLoading(false);
+  };
+
+  useEffect(()=>{ refresh(); },[]);
+
+  const totalEarned      = users.reduce((s,u)=>s+(u.total_tokens||0),0);
+  const totalTransferred = users.reduce((s,u)=>s+(u.tokens_transferred||0),0);
   const totalPending     = totalEarned - totalTransferred;
 
-  const filtered = users.filter(u =>
+  const filtered = users.filter(u=>
     [u.name,u.email,u.wallet].some(f=>f?.toLowerCase().includes(search.toLowerCase()))
   );
 
   const openEdit = u => { setEditForm({...u}); setView("edit"); };
 
-  const saveEdit = () => {
-    const list = loadUsers();
-    const idx  = list.findIndex(u=>u.email===editForm.email);
-    if(idx>=0) list[idx]={...list[idx],...editForm};
-    saveUsers(list); refresh(); setView("detail");
+  // ★ Save user edits to Railway database
+  const saveEdit = async () => {
+    await fetch(`${REWARD_API_URL}/api/admin/users/${encodeURIComponent(editForm.email)}`, {
+      method:  "PUT",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({
+        name:               editForm.name,
+        wallet:             editForm.wallet,
+        total_tokens:       editForm.total_tokens,
+        tokens_transferred: editForm.tokens_transferred,
+        admin_notes:        editForm.admin_notes,
+      }),
+    });
+    await refresh();
+    setView("detail");
   };
 
-  const markAllTransferred = u => {
-    const list = loadUsers();
-    const idx  = list.findIndex(x=>x.email===u.email);
-    if(idx>=0){
-      list[idx].tokensTransferred = list[idx].totalTokens||0;
-      list[idx].lastTransferredAt = new Date().toISOString();
-    }
-    saveUsers(list); refresh();
+  // ★ Mark transferred in Railway database
+  const markAllTransferred = async (u) => {
+    await fetch(`${REWARD_API_URL}/api/admin/users/${encodeURIComponent(u.email)}/mark-transferred`, {
+      method: "POST",
+    });
+    await refresh();
   };
 
   /* ── EDIT VIEW ── */
   if(view==="edit"){
-    const fields=[["name","Full Name","text"],["email","Email","email"],["wallet","Wallet Address","text"],["totalTokens","Total Tokens Earned","number"],["tokensTransferred","Tokens Transferred","number"]];
     return(
       <div style={{minHeight:"100vh",background:"#060d1a",padding:16}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
           <button onClick={()=>setView("detail")} style={{background:"rgba(255,255,255,0.07)",border:"1px solid #1e3a5f",borderRadius:10,padding:"8px 14px",color:"#94a3b8",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,cursor:"pointer"}}>← Back</button>
           <h2 style={{fontFamily:"'Unbounded',sans-serif",color:"#e2e8f0",fontSize:16,margin:0,fontWeight:900}}>Edit User</h2>
         </div>
-        {fields.map(([key,label,type])=>(
+        {[["name","Full Name","text"],["wallet","Wallet Address","text"],["total_tokens","Total Tokens Earned","number"],["tokens_transferred","Tokens Transferred","number"]].map(([key,label,type])=>(
           <div key={key} style={{marginBottom:14}}>
             <label style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#64748b",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.06em"}}>{label}</label>
             <input type={type} value={editForm[key]||""} onChange={e=>setEditForm({...editForm,[key]:type==="number"?+e.target.value:e.target.value})}
@@ -845,22 +807,21 @@ function AdminPanel({ onExit }) {
         ))}
         <div style={{marginBottom:14}}>
           <label style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#64748b",display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.06em"}}>Admin Notes</label>
-          <textarea value={editForm.adminNotes||""} onChange={e=>setEditForm({...editForm,adminNotes:e.target.value})} rows={3}
+          <textarea value={editForm.admin_notes||""} onChange={e=>setEditForm({...editForm,admin_notes:e.target.value})} rows={3}
             style={{width:"100%",padding:"11px 14px",background:"#111827",border:"1.5px solid #1e3a5f",borderRadius:10,color:"#e2e8f0",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
         </div>
-        <button onClick={saveEdit} style={{width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:12,padding:"14px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>SAVE CHANGES</button>
+        <button onClick={saveEdit} style={{width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:12,padding:"14px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>SAVE TO DATABASE</button>
       </div>
     );
   }
 
   /* ── DETAIL VIEW ── */
   if(view==="detail"&&selected){
-    const u=users.find(x=>x.email===selected)||users[0];
+    const u=users.find(x=>x.email===selected);
     if(!u){setView("list");return null;}
-    const pending=(u.totalTokens||0)-(u.tokensTransferred||0);
+    const pending=(u.total_tokens||0)-(u.tokens_transferred||0);
     const sessionsByEx={};
-    (u.history||[]).forEach(h=>{sessionsByEx[h.exerciseId]=(sessionsByEx[h.exerciseId]||0)+h.tokens;});
-
+    (u.history||[]).forEach(h=>{sessionsByEx[h.exercise_id]=(sessionsByEx[h.exercise_id]||0)+h.tokens;});
     return(
       <div style={{minHeight:"100vh",background:"#060d1a",padding:16,paddingBottom:32}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
@@ -868,34 +829,30 @@ function AdminPanel({ onExit }) {
           <h2 style={{fontFamily:"'Unbounded',sans-serif",color:"#e2e8f0",fontSize:16,margin:0,fontWeight:900,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.name}</h2>
           <button onClick={()=>openEdit(u)} style={{background:"rgba(26,93,168,0.2)",border:"1px solid rgba(26,93,168,0.4)",borderRadius:8,padding:"7px 12px",color:T.glow,fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,cursor:"pointer",flexShrink:0}}>✏️ Edit</button>
         </div>
-
         <div style={{background:"#111827",borderRadius:14,padding:16,border:"1px solid #1e3a5f",marginBottom:12}}>
-          {[["Name",u.name],["Email",u.email],["Wallet",u.wallet||"—"],["Joined",u.createdAt?new Date(u.createdAt).toLocaleDateString("en-MY"):"—"],["Last Active",u.lastActive?new Date(u.lastActive).toLocaleDateString("en-MY"):"—"],["Last Transferred",u.lastTransferredAt?new Date(u.lastTransferredAt).toLocaleString("en-MY"):"Never"]].map(([label,val])=>(
+          {[["Email",u.email],["Wallet",u.wallet||"—"],["Joined",u.created_at?new Date(u.created_at).toLocaleDateString("en-MY"):"—"],["Last Active",u.last_active?new Date(u.last_active).toLocaleDateString("en-MY"):"—"]].map(([label,val])=>(
             <div key={label} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"6px 0",borderBottom:"1px solid #1e2d40"}}>
               <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#64748b",flexShrink:0}}>{label}</span>
               <span style={{fontFamily:val?.startsWith?.("0x")?"monospace":"'Plus Jakarta Sans',sans-serif",fontSize:val?.startsWith?.("0x")?10:12,color:"#e2e8f0",maxWidth:200,wordBreak:"break-all",textAlign:"right",marginLeft:8}}>{val}</span>
             </div>
           ))}
         </div>
-
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-          {[["Earned",u.totalTokens||0,"#60a5fa"],["Sent",u.tokensTransferred||0,"#4ade80"],["Pending",pending,"#fb923c"]].map(([label,val,col])=>(
+          {[["Earned",u.total_tokens||0,"#60a5fa"],["Sent",u.tokens_transferred||0,"#4ade80"],["Pending",pending,"#fb923c"]].map(([label,val,col])=>(
             <div key={label} style={{background:"#111827",borderRadius:12,padding:"12px 6px",textAlign:"center",border:"1px solid #1e3a5f"}}>
               <p style={{fontFamily:"'Unbounded',sans-serif",fontSize:18,color:col,margin:"0 0 3px",fontWeight:900}}>{val.toLocaleString()}</p>
               <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:9,color:"#64748b",margin:0,textTransform:"uppercase",letterSpacing:"0.06em"}}>{label}</p>
             </div>
           ))}
         </div>
-
         {pending>0&&(
           <div style={{background:"#0d2010",borderRadius:14,padding:14,border:"1px solid #14532d",marginBottom:12}}>
             <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#86efac",margin:"0 0 10px",fontWeight:600}}>Mark as transferred to wallet</p>
-            <button onClick={()=>{markAllTransferred(u);refresh();}} style={{width:"100%",background:"#052e16",border:"1px solid #16a34a",borderRadius:10,padding:"10px",color:"#4ade80",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:700}}>
+            <button onClick={()=>{markAllTransferred(u);}} style={{width:"100%",background:"#052e16",border:"1px solid #16a34a",borderRadius:10,padding:"10px",color:"#4ade80",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:700}}>
               ✅ Mark All {pending.toLocaleString()} PEDULI as Sent
             </button>
           </div>
         )}
-
         {Object.keys(sessionsByEx).length>0&&(
           <div style={{background:"#111827",borderRadius:14,padding:16,border:"1px solid #1e3a5f",marginBottom:12}}>
             <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:11,color:T.glow,margin:"0 0 10px",textTransform:"uppercase",letterSpacing:"0.06em"}}>Tokens by Exercise</p>
@@ -903,27 +860,26 @@ function AdminPanel({ onExit }) {
               const ex=EXERCISES.find(e=>e.id===exId);
               return(
                 <div key={exId} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid #1e2d40"}}>
-                  <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#cbd5e1"}}>{ex?.emoji} {ex?.name}</span>
+                  <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#cbd5e1"}}>{ex?.emoji} {ex?.name||exId}</span>
                   <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#fde68a",fontWeight:700}}>{tokens} PDL</span>
                 </div>
               );
             })}
           </div>
         )}
-
         <div style={{background:"#111827",borderRadius:14,padding:16,border:"1px solid #1e3a5f"}}>
           <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:11,color:T.glow,margin:"0 0 10px",textTransform:"uppercase",letterSpacing:"0.06em"}}>Session Log ({(u.history||[]).length} sessions)</p>
           {(u.history||[]).length===0
             ?<p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#475569",margin:0}}>No sessions yet.</p>
-            :[...(u.history||[])].reverse().slice(0,20).map((h,i)=>{
-              const ex=EXERCISES.find(e=>e.id===h.exerciseId);
+            :(u.history||[]).slice(0,20).map((h,i)=>{
+              const ex=EXERCISES.find(e=>e.id===h.exercise_id);
               return(
                 <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid #1e2d40"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <span style={{fontSize:15}}>{ex?.emoji}</span>
                     <div>
-                      <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#e2e8f0",margin:0}}>{ex?.name}</p>
-                      <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,color:"#475569",margin:0}}>{new Date(h.date).toLocaleString("en-MY")} · {h.reps} reps</p>
+                      <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#e2e8f0",margin:0}}>{ex?.name||h.exercise_id}</p>
+                      <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,color:"#475569",margin:0}}>{new Date(h.created_at).toLocaleString("en-MY")} · {h.reps} reps</p>
                     </div>
                   </div>
                   <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#fde68a",fontWeight:700,whiteSpace:"nowrap"}}>+{h.tokens} PDL</span>
@@ -945,7 +901,10 @@ function AdminPanel({ onExit }) {
             <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#475569",fontSize:10,margin:"0 0 3px",textTransform:"uppercase",letterSpacing:"0.08em"}}>PEDULI · WargaTerra Enterprise</p>
             <h1 style={{fontFamily:"'Unbounded',sans-serif",color:"#fff",fontSize:20,margin:0,fontWeight:900}}>Admin Console</h1>
           </div>
-          <button onClick={onExit} style={{background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10,padding:"8px 14px",color:"#fca5a5",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:600}}>🚪 Exit</button>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={refresh} style={{background:"rgba(96,165,250,0.15)",border:"1px solid rgba(96,165,250,0.3)",borderRadius:10,padding:"8px 12px",color:T.glow,fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,cursor:"pointer"}}>🔄 Refresh</button>
+            <button onClick={onExit} style={{background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10,padding:"8px 14px",color:"#fca5a5",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:600}}>🚪 Exit</button>
+          </div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
           {[["👥","Users",users.length],["🪙","Earned",totalEarned.toLocaleString()],["✈️","Sent",totalTransferred.toLocaleString()],["⏳","Pending",totalPending.toLocaleString()]].map(([icon,label,val])=>(
@@ -957,24 +916,26 @@ function AdminPanel({ onExit }) {
           ))}
         </div>
       </div>
-
       <div style={{padding:"12px 16px 0"}}>
-        <input placeholder="🔍  Search by name, email or wallet…" value={search} onChange={e=>setSearch(e.target.value)}
+        <input placeholder="🔍 Search by name, email or wallet…" value={search} onChange={e=>setSearch(e.target.value)}
           style={{width:"100%",padding:"11px 14px",background:"#111827",border:"1.5px solid #1e3a5f",borderRadius:12,color:"#e2e8f0",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
       </div>
-
       <div style={{padding:"12px 16px 0"}}>
-        {filtered.length===0?(
+        {loading?(
+          <div style={{textAlign:"center",padding:"48px 0"}}>
+            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#475569",fontSize:14}}>Loading users from database…</p>
+          </div>
+        ):filtered.length===0?(
           <div style={{textAlign:"center",padding:"48px 0"}}>
             <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#475569",fontSize:14}}>
-              {users.length===0?"No registered users yet. Users will appear here after they register in the app.":"No users match your search."}
+              {users.length===0?"No registered users yet.":"No users match your search."}
             </p>
           </div>
         ):filtered.map(u=>{
-          const pending=(u.totalTokens||0)-(u.tokensTransferred||0);
+          const pending=(u.total_tokens||0)-(u.tokens_transferred||0);
           return(
             <div key={u.email} onClick={()=>{setSelected(u.email);setView("detail");}}
-              style={{background:"#111827",borderRadius:14,padding:"14px 16px",marginBottom:10,border:"1px solid #1e3a5f",cursor:"pointer",transition:"border-color 0.15s"}}>
+              style={{background:"#111827",borderRadius:14,padding:"14px 16px",marginBottom:10,border:"1px solid #1e3a5f",cursor:"pointer"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
                 <div style={{flex:1,minWidth:0}}>
                   <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:14,color:"#f1f5f9",margin:"0 0 2px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.name}</p>
@@ -986,14 +947,14 @@ function AdminPanel({ onExit }) {
               </div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {[
-                  [`🪙 ${(u.totalTokens||0).toLocaleString()} earned`,"#1e3a5f","#60a5fa"],
-                  [`✈️ ${(u.tokensTransferred||0).toLocaleString()} sent`,"#052e16","#4ade80"],
+                  [`🪙 ${(u.total_tokens||0).toLocaleString()} earned`,"#1e3a5f","#60a5fa"],
+                  [`✈️ ${(u.tokens_transferred||0).toLocaleString()} sent`,"#052e16","#4ade80"],
                   ...(pending>0?[[`⏳ ${pending.toLocaleString()} pending`,"#3d2000","#fb923c"]]:[]),
                 ].map(([text,bg,col])=>(
                   <span key={text} style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,fontWeight:600,color:col,background:bg,borderRadius:6,padding:"3px 8px"}}>{text}</span>
                 ))}
                 <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,color:"#475569",background:"#0f172a",borderRadius:6,padding:"3px 8px"}}>
-                  📅 {u.createdAt?new Date(u.createdAt).toLocaleDateString("en-MY"):"—"}
+                  📅 {u.created_at?new Date(u.created_at).toLocaleDateString("en-MY"):"—"}
                 </span>
                 <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,color:"#475569",background:"#0f172a",borderRadius:6,padding:"3px 8px"}}>
                   📝 {(u.history||[]).length} sessions
@@ -1011,17 +972,33 @@ function AdminPanel({ onExit }) {
    MAIN APP
 ──────────────────────────────────────────────── */
 export default function App() {
-  const [page,setPage]             = useState("home");
-  const [user,setUser]             = useState(null);
-  const [exercise,setExercise]     = useState(EXERCISES[0]);
+  const [page,setPage]         = useState("home");
+  const [user,setUser]         = useState(null);
+  const [exercise,setExercise] = useState(EXERCISES[0]);
   const [targetReps,setTargetReps] = useState(20);
   const [adminAuth,setAdminAuth]   = useState(false);
 
-  useEffect(()=>{ const u=load("user"); if(u?.email)setUser(u); },[]);
+  // ★ On app load — restore session from localStorage cache,
+  //   then refresh from database
+  useEffect(()=>{
+    const cached = load("user");
+    if(cached?.email){
+      setUser(cached);
+      // Refresh from DB in background
+      apiLoadUser(cached.email).then(dbUser=>{
+        if(dbUser){ setUser(dbUser); save("user", dbUser); }
+      });
+    }
+  },[]);
 
-  const saveUser = u => {
-    save("user",u); setUser(u);
-    upsertUserRegistry(u);
+  // ★ saveUser — saves to DB AND local cache
+  const saveUser = async u => {
+    save("user", u);
+    setUser(u);
+    await apiSaveUser(u);
+    // Reload fresh from DB to get server-side totals
+    const dbUser = await apiLoadUser(u.email);
+    if(dbUser){ setUser(dbUser); save("user", dbUser); }
   };
 
   const navigate = (pg, opts={}) => {
@@ -1031,32 +1008,36 @@ export default function App() {
     setPage(pg);
   };
 
-  // Updates localStorage (instant) — blockchain transfer is handled inside ExercisePage
+  // addTokens updates local cache only — DB update happens
+  // inside server.js when /api/reward is called
   const addTokens = (exerciseId, reps) => {
-    if(!user) return {tokens:reps,limited:false};
-    const td=todayKey();
-    const u=JSON.parse(JSON.stringify(user));
-    if(!u.history)    u.history=[];
-    if(!u.dailyCount) u.dailyCount={};
-    if(!u.dailyCount[td]) u.dailyCount[td]={};
-    const done=u.dailyCount[td][exerciseId]||0;
-    const allowed=Math.min(reps,DAILY_LIMIT-done);
-    u.dailyCount[td][exerciseId]=done+allowed;
-    u.totalTokens=(u.totalTokens||0)+allowed;
-    if(!Array.isArray(u.history))u.history=[];
-    u.history.push({date:new Date().toISOString(),exerciseId,reps:allowed,tokens:allowed});
-    saveUser(u);
-    return {tokens:allowed,limited:allowed<reps};
+    if(!user) return { tokens: reps, limited: false };
+    const td = todayKey();
+    const u  = JSON.parse(JSON.stringify(user));
+    if(!u.history)    u.history    = [];
+    if(!u.dailyCount) u.dailyCount = {};
+    if(!u.dailyCount[td]) u.dailyCount[td] = {};
+    const done    = u.dailyCount[td][exerciseId] || 0;
+    const allowed = Math.min(reps, DAILY_LIMIT - done);
+    u.dailyCount[td][exerciseId] = done + allowed;
+    u.totalTokens = (u.totalTokens || 0) + allowed;
+    u.history.unshift({
+      date: new Date().toISOString(), exerciseId, reps: allowed, tokens: allowed
+    });
+    save("user", u);
+    setUser(u);
+    return { tokens: allowed, limited: allowed < reps };
   };
 
+  // getDailyRemaining — reads from local cache for instant UI
   const getDailyRemaining = id => {
     if(!user) return DAILY_LIMIT;
-    const done=user.dailyCount?.[todayKey()]?.[id]||0;
-    return Math.max(0,DAILY_LIMIT-done);
+    const done = user.dailyCount?.[todayKey()]?.[id] || 0;
+    return Math.max(0, DAILY_LIMIT - done);
   };
 
-  const isExercise = page==="exercise";
-  const isAdmin    = page==="admin";
+  const isExercise = page === "exercise";
+  const isAdmin    = page === "admin";
 
   if(isAdmin){
     if(!adminAuth) return <AdminLogin onSuccess={()=>setAdminAuth(true)} onCancel={()=>setPage("home")}/>;
