@@ -62,6 +62,7 @@ async function apiSaveUser(user) {
         email:  user.email,
         name:   user.name,
         wallet: user.wallet || "",
+        pin:    user.pin || undefined,
       }),
     });
     return await res.json();
