@@ -600,30 +600,45 @@ function DashboardPage({ user, navigate }) {
    PROFILE PAGE
 ──────────────────────────────────────────────── */
 function ProfilePage({ user, saveUser, navigate }) {
-  const [form,setForm]=useState({name:user?.name||"",email:user?.email||"",wallet:user?.wallet||""});
-  const [saved,setSaved]=useState(false);
-  const [saving,setSaving]=useState(false);
-  const [error,setError]=useState("");
+  const [mode,setMode]     = useState(user?"edit":"register"); // "register" | "login" | "edit"
+  const [form,setForm]     = useState({name:user?.name||"",email:user?.email||"",wallet:user?.wallet||""});
+  const [loginEmail,setLoginEmail] = useState("");
+  const [saved,setSaved]   = useState(false);
+  const [saving,setSaving] = useState(false);
+  const [error,setError]   = useState("");
+  const [loggingIn,setLoggingIn] = useState(false);
 
-  const handleSave=async()=>{
-    if(!form.name.trim())return setError("Please enter your name.");
-    if(!form.email.includes("@"))return setError("Please enter a valid email.");
+  const handleLogin = async () => {
+    if(!loginEmail.includes("@")) return setError("Please enter a valid email.");
+    setError(""); setLoggingIn(true);
+    const dbUser = await apiLoadUser(loginEmail.trim().toLowerCase());
+    setLoggingIn(false);
+    if(!dbUser) return setError("No account found with that email. Please register instead.");
+    await saveUser(dbUser);
+    setSaved(true);
+    setTimeout(()=>navigate("home"), 1200);
+  };
+
+  const handleSave = async () => {
+    if(!form.name.trim()) return setError("Please enter your name.");
+    if(!form.email.includes("@")) return setError("Please enter a valid email.");
     if(form.wallet){
       const ws=walletStatus(form.wallet);
       if(ws!=="valid"){
         const hex=form.wallet.slice(2);
-        if(ws==="noprefix")return setError("Wallet address must start with 0x");
-        if(ws==="short")return setError(`Address too short — ${hex.length}/40 hex characters entered.`);
-        if(ws==="long")return setError("Address too long — must be exactly 42 characters.");
-        if(ws==="badchars")return setError("Invalid characters — only 0–9 and a–f allowed after 0x.");
+        if(ws==="noprefix") return setError("Wallet address must start with 0x");
+        if(ws==="short")    return setError(`Address too short — ${hex.length}/40 hex characters entered.`);
+        if(ws==="long")     return setError("Address too long — must be exactly 42 characters.");
+        if(ws==="badchars") return setError("Invalid characters — only 0–9 and a–f allowed after 0x.");
       }
     }
-    setError("");setSaving(true);
+    setError(""); setSaving(true);
     const updated={...user,...form,updatedAt:new Date().toISOString()};
-    if(!updated.createdAt)updated.createdAt=new Date().toISOString();
+    if(!updated.createdAt)  updated.createdAt=new Date().toISOString();
     if(!updated.totalTokens)updated.totalTokens=0;
     await saveUser(updated);
-    setSaving(false);setSaved(true);setTimeout(()=>setSaved(false),3000);
+    setSaving(false); setSaved(true);
+    setTimeout(()=>setSaved(false),3000);
   };
 
   const handleLogout=()=>{save("user",null);window.location.reload();};
@@ -632,31 +647,91 @@ function ProfilePage({ user, saveUser, navigate }) {
   return(
     <div style={{minHeight:"100vh",background:T.surface,paddingBottom:80}}>
       <div style={{background:`linear-gradient(135deg,${T.primary},${T.primaryDk})`,padding:"28px 20px 24px"}}>
-        <h1 style={{fontFamily:"'Unbounded',sans-serif",color:"#fff",fontSize:22,margin:0,fontWeight:900}}>{user?"My Profile":"Register"}</h1>
-        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:13,margin:"6px 0 0"}}>Link your wallet to receive PEDULI tokens</p>
+        <h1 style={{fontFamily:"'Unbounded',sans-serif",color:"#fff",fontSize:22,margin:0,fontWeight:900}}>
+          {user?"My Profile":mode==="login"?"Welcome Back":"Register"}
+        </h1>
+        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:13,margin:"6px 0 0"}}>
+          {user?"Manage your account & wallet":mode==="login"?"Sign in to restore your rewards":"Create your free PEDULI account"}
+        </p>
       </div>
+
+      {/* ── Tab switcher — only shown when logged out ── */}
+      {!user&&(
+        <div style={{display:"flex",margin:"16px 16px 0",background:T.primaryPale,borderRadius:12,padding:4}}>
+          {[["register","New User"],["login","Returning User"]].map(([m,label])=>(
+            <button key={m} onClick={()=>{setMode(m);setError("");}}
+              style={{flex:1,padding:"10px",border:"none",borderRadius:9,cursor:"pointer",fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:13,transition:"all 0.2s",
+                background:mode===m?T.primary:"transparent",
+                color:mode===m?"#fff":T.primary}}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div style={{padding:16}}>
-        <Card>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,color:T.primary,margin:"0 0 14px",textTransform:"uppercase",letterSpacing:"0.06em"}}>Personal Information</p>
-          <label style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#64748b",display:"block",marginBottom:4}}>Full Name *</label>
-          <input style={inp} value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Your full name"/>
-          <label style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#64748b",display:"block",marginBottom:4}}>Email Address *</label>
-          <input style={inp} type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="your@email.com"/>
-        </Card>
-        <Card style={{marginTop:12}}>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,color:T.primary,margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.06em"}}>🔗 Polygon Wallet Address</p>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#64748b",margin:"0 0 12px"}}>Required to receive PEDULI tokens on Polygon network</p>
-          <WalletInput value={form.wallet} onChange={v=>setForm({...form,wallet:v})} inputStyle={inp}/>
-          <div style={{background:T.accentBg,border:`1px solid ${T.accentBrd}`,borderRadius:10,padding:"10px 12px",marginTop:8}}>
-            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:T.accentDk,margin:0}}>💡 Use MetaMask or Trust Wallet on Polygon network.</p>
-          </div>
-        </Card>
-        {error&&<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:10,padding:"10px 14px",marginTop:12}}><p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:"#dc2626",margin:0}}>{error}</p></div>}
-        {saved&&<div style={{background:T.primaryBg,border:`1px solid ${T.glow}`,borderRadius:10,padding:"10px 14px",marginTop:12}}><p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:T.primary,margin:0}}>✅ Profile saved to database!</p></div>}
-        <button onClick={handleSave} disabled={saving} style={{width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:14,padding:"16px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",marginTop:14,opacity:saving?0.7:1}}>
-          {saving?"SAVING…":user?"SAVE CHANGES":"CREATE ACCOUNT"}
-        </button>
-        {user&&<button onClick={handleLogout} style={{width:"100%",background:"transparent",color:"#ef4444",border:"1.5px solid #fca5a5",borderRadius:14,padding:"14px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:600,fontSize:14,cursor:"pointer",marginTop:10}}>Sign Out</button>}
+
+        {/* ── LOGIN FORM ── */}
+        {!user&&mode==="login"&&(
+          <Card>
+            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,color:T.primary,margin:"0 0 14px",textTransform:"uppercase",letterSpacing:"0.06em"}}>Sign In With Your Email</p>
+            <label style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#64748b",display:"block",marginBottom:4}}>Email Address</label>
+            <input style={inp} type="email" value={loginEmail}
+              onChange={e=>{setLoginEmail(e.target.value);setError("");}}
+              onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+              placeholder="your@email.com"/>
+            <div style={{background:T.primaryBg,border:`1px solid ${T.primaryPale}`,borderRadius:10,padding:"10px 12px",marginBottom:12}}>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#64748b",margin:0}}>
+                💡 Enter the email you used to register. Your tokens, sessions and wallet will be restored automatically.
+              </p>
+            </div>
+            {error&&<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:10,padding:"10px 14px",marginBottom:12}}>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:"#dc2626",margin:0}}>{error}</p>
+            </div>}
+            {saved&&<div style={{background:T.primaryBg,border:`1px solid ${T.glow}`,borderRadius:10,padding:"10px 14px",marginBottom:12}}>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:T.primary,margin:0}}>✅ Welcome back! Redirecting…</p>
+            </div>}
+            <button onClick={handleLogin} disabled={loggingIn}
+              style={{width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:14,padding:"16px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",opacity:loggingIn?0.7:1}}>
+              {loggingIn?"LOOKING YOU UP…":"SIGN IN →"}
+            </button>
+          </Card>
+        )}
+
+        {/* ── REGISTER / EDIT FORM ── */}
+        {(user||mode==="register")&&(
+          <>
+            <Card>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,color:T.primary,margin:"0 0 14px",textTransform:"uppercase",letterSpacing:"0.06em"}}>Personal Information</p>
+              <label style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#64748b",display:"block",marginBottom:4}}>Full Name *</label>
+              <input style={inp} value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Your full name"/>
+              <label style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#64748b",display:"block",marginBottom:4}}>Email Address *</label>
+              <input style={inp} type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="your@email.com"/>
+            </Card>
+            <Card style={{marginTop:12}}>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,color:T.primary,margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.06em"}}>🔗 Polygon Wallet Address</p>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#64748b",margin:"0 0 12px"}}>Required to receive PEDULI tokens on Polygon network</p>
+              <WalletInput value={form.wallet} onChange={v=>setForm({...form,wallet:v})} inputStyle={inp}/>
+              <div style={{background:T.accentBg,border:`1px solid ${T.accentBrd}`,borderRadius:10,padding:"10px 12px",marginTop:8}}>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:T.accentDk,margin:0}}>💡 Use MetaMask or Trust Wallet on Polygon network.</p>
+              </div>
+            </Card>
+            {error&&<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:10,padding:"10px 14px",marginTop:12}}>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:"#dc2626",margin:0}}>{error}</p>
+            </div>}
+            {saved&&<div style={{background:T.primaryBg,border:`1px solid ${T.glow}`,borderRadius:10,padding:"10px 14px",marginTop:12}}>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:T.primary,margin:0}}>✅ Profile saved to database!</p>
+            </div>}
+            <button onClick={handleSave} disabled={saving}
+              style={{width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:14,padding:"16px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",marginTop:14,opacity:saving?0.7:1}}>
+              {saving?"SAVING…":user?"SAVE CHANGES":"CREATE ACCOUNT"}
+            </button>
+            {user&&<button onClick={handleLogout}
+              style={{width:"100%",background:"transparent",color:"#ef4444",border:"1.5px solid #fca5a5",borderRadius:14,padding:"14px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:600,fontSize:14,cursor:"pointer",marginTop:10}}>
+              Sign Out
+            </button>}
+          </>
+        )}
       </div>
     </div>
   );
