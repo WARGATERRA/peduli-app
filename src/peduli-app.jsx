@@ -1087,6 +1087,14 @@ function AdminPanel({ onExit, adminToken }) {
     });
     await refresh();
   };
+   const resetUserPin = async (u) => {
+    if(!window.confirm(`Reset PIN for ${u.name} to 0000? They will be forced to set a new PIN on next login.`)) return;
+    await fetch(`${REWARD_API_URL}/api/admin/users/${encodeURIComponent(u.email)}/reset-pin`, {
+      method: "POST",
+      headers: { "x-admin-token": adminToken },
+    });
+    await refresh();
+  };
 
   /* ── EDIT VIEW ── */
   if(view==="edit"){
@@ -1151,6 +1159,13 @@ function AdminPanel({ onExit, adminToken }) {
             </button>
           </div>
         )}
+         <div style={{background:"#1a0a00",borderRadius:14,padding:14,border:"1px solid #7c2d12",marginBottom:12}}>
+          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#fdba74",margin:"0 0 10px",fontWeight:600}}>🔐 PIN Management</p>
+          <button onClick={()=>resetUserPin(u)} style={{width:"100%",background:"#431407",border:"1px solid #c2410c",borderRadius:10,padding:"10px",color:"#fb923c",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:700}}>
+            🔑 Reset PIN to 0000
+          </button>
+          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,color:"#78350f",margin:"8px 0 0"}}>User will be forced to set a new PIN on next login.</p>
+        </div>
         {Object.keys(sessionsByEx).length>0&&(
           <div style={{background:"#111827",borderRadius:14,padding:16,border:"1px solid #1e3a5f",marginBottom:12}}>
             <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:11,color:T.glow,margin:"0 0 10px",textTransform:"uppercase",letterSpacing:"0.06em"}}>Tokens by Exercise</p>
