@@ -160,7 +160,26 @@ async function apiChangePin(email, newPin) {
     return await res.json();
   } catch { return { error: "Could not reach server. Please try again." }; }
 }
+// Admin auth
+async function apiAdminLogin(password) {
+  try {
+    const res = await fetch(`${REWARD_API_URL}/api/admin/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    return await res.json();
+  } catch { return { error: "Could not reach server." }; }
+}
 
+async function apiAdminLogout(token) {
+  try {
+    await fetch(`${REWARD_API_URL}/api/admin/logout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": token },
+    });
+  } catch {}
+}
 // Normalise raw DB user to app format
 function normaliseUser(data) {
   return {
@@ -946,13 +965,25 @@ function DisclaimerPage() {
 const checkAdminPw = pw => pw === atob("cG9GZjQwMTYwJVBFRFVMSQ==");
 
 function AdminLogin({ onSuccess, onCancel }) {
-  const [pw,setPw]=useState("");
-  const [err,setErr]=useState(false);
-  const [shake,setShake]=useState(false);
-  const attempt=()=>{
-    if(checkAdminPw(pw)){onSuccess();}
-    else{setErr(true);setShake(true);setPw("");setTimeout(()=>setShake(false),600);}
+  const [pw,setPw]     = useState("");
+  const [err,setErr]   = useState("");
+  const [busy,setBusy] = useState(false);
+  const [shake,setShake] = useState(false);
+
+  const attempt = async () => {
+    if(!pw.trim()) return;
+    setBusy(true); setErr("");
+    const result = await apiAdminLogin(pw);
+    setBusy(false);
+    if(result.error || !result.token) {
+      setErr("Incorrect password.");
+      setShake(true); setPw("");
+      setTimeout(()=>setShake(false), 600);
+      return;
+    }
+    onSuccess(result.token);
   };
+
   return(
     <div style={{minHeight:"100vh",background:"#060d1a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32}}>
       <div style={{animation:shake?"shakeX 0.5s ease":"none",width:"100%",maxWidth:340}}>
@@ -961,17 +992,24 @@ function AdminLogin({ onSuccess, onCancel }) {
           <h2 style={{fontFamily:"'Unbounded',sans-serif",color:"#e2e8f0",fontSize:18,margin:"0 0 6px",fontWeight:900}}>Admin Console</h2>
           <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#475569",fontSize:12,margin:0}}>PEDULI · WargaTerra Enterprise</p>
         </div>
-        <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setErr(false);}} onKeyDown={e=>e.key==="Enter"&&attempt()} placeholder="Enter admin password"
+        <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setErr("");}}
+          onKeyDown={e=>e.key==="Enter"&&attempt()} placeholder="Enter admin password"
           style={{width:"100%",padding:"14px 16px",background:"#111827",border:`1.5px solid ${err?"#ef4444":"#1e3a5f"}`,borderRadius:12,color:"#fff",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:15,outline:"none",boxSizing:"border-box",marginBottom:8}}/>
-        {err&&<p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#ef4444",fontSize:12,margin:"0 0 12px"}}>❌ Incorrect password.</p>}
-        <button onClick={attempt} style={{width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:12,padding:"14px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:10}}>UNLOCK CONSOLE</button>
-        <button onClick={onCancel} style={{width:"100%",background:"transparent",color:"#475569",border:"1px solid #1e3a5f",borderRadius:12,padding:"12px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,cursor:"pointer"}}>← Return to App</button>
+        {err&&<p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#ef4444",fontSize:12,margin:"0 0 12px"}}>❌ {err}</p>}
+        <button onClick={attempt} disabled={busy}
+          style={{width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:12,padding:"14px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:10,opacity:busy?0.7:1}}>
+          {busy?"VERIFYING…":"UNLOCK CONSOLE"}
+        </button>
+        <button onClick={onCancel}
+          style={{width:"100%",background:"transparent",color:"#475569",border:"1px solid #1e3a5f",borderRadius:12,padding:"12px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,cursor:"pointer"}}>
+          ← Return to App
+        </button>
       </div>
     </div>
   );
 }
 
-function AdminPanel({ onExit }) {
+function AdminPanel({ onExit, adminToken }) {
   const [users,setUsers]       = useState([]);
   const [loading,setLoading]   = useState(true);
   const [search,setSearch]     = useState("");
@@ -980,10 +1018,12 @@ function AdminPanel({ onExit }) {
   const [editForm,setEditForm] = useState({});
 
   // ★ Fetch users from Railway database
-  const refresh = async () => {
+ const refresh = async () => {
     setLoading(true);
     try {
-      const res  = await fetch(`${REWARD_API_URL}/api/admin/users`);
+      const res = await fetch(`${REWARD_API_URL}/api/admin/users`, {
+        headers: { "x-admin-token": adminToken },
+      });
       const data = await res.json();
       setUsers(data);
     } catch (err) {
@@ -1005,10 +1045,10 @@ function AdminPanel({ onExit }) {
   const openEdit = u => { setEditForm({...u}); setView("edit"); };
 
   // ★ Save user edits to Railway database
-  const saveEdit = async () => {
+ const saveEdit = async () => {
     await fetch(`${REWARD_API_URL}/api/admin/users/${encodeURIComponent(editForm.email)}`, {
       method:  "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-admin-token": adminToken },
       body:    JSON.stringify({
         name:               editForm.name,
         wallet:             editForm.wallet,
@@ -1025,6 +1065,7 @@ function AdminPanel({ onExit }) {
   const markAllTransferred = async (u) => {
     await fetch(`${REWARD_API_URL}/api/admin/users/${encodeURIComponent(u.email)}/mark-transferred`, {
       method: "POST",
+      headers: { "x-admin-token": adminToken },
     });
     await refresh();
   };
@@ -1142,7 +1183,7 @@ function AdminPanel({ onExit }) {
           </div>
           <div style={{display:"flex",gap:8}}>
             <button onClick={refresh} style={{background:"rgba(96,165,250,0.15)",border:"1px solid rgba(96,165,250,0.3)",borderRadius:10,padding:"8px 12px",color:T.glow,fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,cursor:"pointer"}}>🔄 Refresh</button>
-            <button onClick={onExit} style={{background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10,padding:"8px 14px",color:"#fca5a5",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:600}}>🚪 Exit</button>
+            <button onClick={()=>{ apiAdminLogout(adminToken); onExit(); }} style={{background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10,padding:"8px 14px",color:"#fca5a5",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:600}}>🚪 Exit</button>
           </div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
@@ -1216,6 +1257,7 @@ export default function App() {
   const [exercise,setExercise] = useState(EXERCISES[0]);
   const [targetReps,setTargetReps] = useState(20);
   const [adminAuth,setAdminAuth]   = useState(false);
+  const [adminToken,setAdminToken] = useState(null);
 
   // ★ On app load — restore session from localStorage cache,
   //   then refresh from database
@@ -1279,8 +1321,8 @@ export default function App() {
   const isAdmin    = page === "admin";
 
   if(isAdmin){
-    if(!adminAuth) return <AdminLogin onSuccess={()=>setAdminAuth(true)} onCancel={()=>setPage("home")}/>;
-    return <AdminPanel onExit={()=>{setAdminAuth(false);setPage("home");}}/>;
+    if(!adminAuth) return <AdminLogin onSuccess={(token)=>{setAdminAuth(true);setAdminToken(token);}} onCancel={()=>setPage("home")}/>;
+    return <AdminPanel adminToken={adminToken} onExit={()=>{setAdminAuth(false);setAdminToken(null);setPage("home");}}/>;
   }
 
   return(
