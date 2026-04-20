@@ -79,24 +79,7 @@ async function apiLoadUser(email) {
     if (!res.ok) return null;
     const data = await res.json();
     // Normalise DB column names to match what the app expects
-    return {
-      email:             data.email,
-      name:              data.name,
-      wallet:            data.wallet            || "",
-      createdAt:         data.created_at,
-      lastActive:        data.last_active,
-      totalTokens:       data.total_tokens      || 0,
-      tokensTransferred: data.tokens_transferred|| 0,
-      mustChangePin:     data.must_change_pin   || false,
-      history:           (data.history || []).map(h => ({
-        date:       h.created_at,
-        exerciseId: h.exercise_id,
-        reps:       h.reps,
-        tokens:     h.tokens,
-        txHash:     h.tx_hash,
-      })),
-      dailyCount: {},
-    };
+    return normaliseUser(data);
   } catch (err) {
     console.error("Could not load user from DB:", err);
     return null;
@@ -160,6 +143,19 @@ async function apiChangePin(email, newPin) {
     });
     return await res.json();
   } catch { return { error: "Could not reach server. Please try again." }; }
+}
+
+
+// Update existing user profile (name + wallet only)
+async function apiUpdateProfile(email, name, wallet) {
+  try {
+    const res = await fetch(`${REWARD_API_URL}/api/users/profile`, {
+      method:  "PUT",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ email, name, wallet }),
+    });
+    return await res.json();
+  } catch { return { error: "Could not reach server." }; }
 }
 // Admin auth
 async function apiAdminLogin(password) {
@@ -732,7 +728,8 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
     if(result.error)return setError(result.error);
     const u=normaliseUser(result.user);
     if(result.mustChangePin||result.user?.must_change_pin){
-      save("user",u);setCpEmail(loginEmail.trim().toLowerCase());
+      await saveUser(u);
+      setCpEmail(loginEmail.trim().toLowerCase());
       setNewPin("");setConfirmPin("");setMode("change-pin");return;
     }
     await saveUser(u);navigate("home");
@@ -765,13 +762,16 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
   const handleSave = async () => {
     if(!form.name.trim())return setError("Please enter your name.");
     if(form.wallet){const ws=walletStatus(form.wallet);if(ws!=="valid"){const hex=form.wallet.slice(2);
-      if(ws==="noprefix")return setError("Wallet must start with 0x.");
-      if(ws==="short")return setError(`Too short — ${hex.length}/40 hex characters.`);
-      if(ws==="long")return setError("Too long — must be exactly 42 characters.");
-      if(ws==="badchars")return setError("Invalid characters — only 0–9 and a–f after 0x.");}}
+      if(ws==="noprefix") return setError("Wallet must start with 0x.");
+      if(ws==="short")    return setError(`Too short — ${hex.length}/40 hex characters.`);
+      if(ws==="long")     return setError("Too long — must be exactly 42 characters.");
+      if(ws==="badchars") return setError("Invalid characters — only 0–9 and a–f after 0x.");}}
     clr();setBusy(true);
+    const result = await apiUpdateProfile(user.email, form.name, form.wallet);
+    setBusy(false);
+    if(!result||result.error) return setError(result?.error||"Could not save. Please try again.");
     await saveUser({...user,...form});
-    setBusy(false);setSuccess("✅ Profile saved!");setTimeout(()=>setSuccess(""),3000);
+    setSuccess("✅ Profile saved!");setTimeout(()=>setSuccess(""),3000);
   };
 
   const handleLogout=()=>{save("user",null);window.location.reload();};
@@ -1325,7 +1325,6 @@ export default function App() {
   const saveUser = async u => {
     save("user", u);
     setUser(u);
-    await apiSaveUser(u);
     // Reload fresh from DB to get server-side totals
     const dbUser = await apiLoadUser(u.email);
     if(dbUser){ setUser(dbUser); save("user", dbUser); }
