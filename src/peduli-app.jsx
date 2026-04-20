@@ -87,6 +87,7 @@ async function apiLoadUser(email) {
       lastActive:        data.last_active,
       totalTokens:       data.total_tokens      || 0,
       tokensTransferred: data.tokens_transferred|| 0,
+      mustChangePin:     data.must_change_pin   || false,
       history:           (data.history || []).map(h => ({
         date:       h.created_at,
         exerciseId: h.exercise_id,
@@ -94,7 +95,7 @@ async function apiLoadUser(email) {
         tokens:     h.tokens,
         txHash:     h.tx_hash,
       })),
-      dailyCount: {}, // fetched separately per exercise
+      dailyCount: {},
     };
   } catch (err) {
     console.error("Could not load user from DB:", err);
@@ -701,7 +702,7 @@ function ProfilePage({ user, saveUser, navigate }) {
     if(!/^\d{4}$/.test(regPin))return setError("PIN must be exactly 4 digits.");
     if(regPin!==regConfirm)return setError("PINs do not match. Please re-enter.");
     clr();setBusy(true);
-    await saveUser({...form,pin:regPin,createdAt:new Date().toISOString(),totalTokens:0});
+    await saveUser({...form,email:form.email.trim().toLowerCase(),pin:regPin,createdAt:new Date().toISOString(),totalTokens:0});
     setBusy(false);navigate("home");
   };
 
@@ -1265,9 +1266,23 @@ export default function App() {
     const cached = load("user");
     if(cached?.email){
       setUser(cached);
-      // Refresh from DB in background
-      apiLoadUser(cached.email).then(dbUser=>{
-        if(dbUser){ setUser(dbUser); save("user", dbUser); }
+      apiLoadUser(cached.email).then(async dbUser=>{
+        if(dbUser){
+          // Fetch today's remaining for all exercises if wallet exists
+          if(dbUser.wallet){
+            const remaining = {};
+            await Promise.all(EXERCISES.map(async ex => {
+              const r = await apiGetDailyRemaining(dbUser.wallet, ex.id);
+              remaining[ex.id] = r;
+            }));
+            dbUser.serverDailyRemaining = remaining;
+          }
+          setUser(dbUser);
+          save("user", dbUser);
+          if(dbUser.mustChangePin){
+            setPage("profile");
+          }
+        }
       });
     }
   },[]);
@@ -1313,6 +1328,10 @@ export default function App() {
   // getDailyRemaining — reads from local cache for instant UI
   const getDailyRemaining = id => {
     if(!user) return DAILY_LIMIT;
+    // Check server-side daily limit if wallet is available
+    const serverRemaining = user.serverDailyRemaining?.[id];
+    if(serverRemaining !== undefined) return serverRemaining;
+    // Fall back to local cache
     const done = user.dailyCount?.[todayKey()]?.[id] || 0;
     return Math.max(0, DAILY_LIMIT - done);
   };
