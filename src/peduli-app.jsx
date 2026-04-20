@@ -459,7 +459,19 @@ function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDail
     if(earned<=0)return;
     setTxStatus("pending");
     const txResult=await sendBlockchainReward(user.wallet,earned,exerciseId,user.email);
-    if(txResult.success){setTxStatus("success");setTxHash(txResult.txHash);}
+    if(txResult.success){
+      setTxStatus("success");
+      setTxHash(txResult.txHash);
+      // Update serverDailyRemaining so UI reflects correct remaining today
+      if(txResult.dailyRemaining!==undefined){
+        setUser(prev=>{
+          if(!prev)return prev;
+          const updated={...prev,serverDailyRemaining:{...prev.serverDailyRemaining,[exerciseId]:txResult.dailyRemaining}};
+          save("user",updated);
+          return updated;
+        });
+      }
+    }
     else{setTxStatus("failed");}
   };
 
@@ -671,8 +683,8 @@ function DashboardPage({ user, navigate }) {
 /* ──────────────────────────────────────────────
    PROFILE PAGE
 ──────────────────────────────────────────────── */
-function ProfilePage({ user, saveUser, navigate }) {
-  const [mode,setMode]             = useState(user?"edit":"register");
+function ProfilePage({ user, saveUser, navigate, startMode }) {
+  const [mode,setMode] = useState(startMode || (user?"edit":"register"));
   const [form,setForm]             = useState({name:user?.name||"",email:user?.email||"",wallet:user?.wallet||""});
   const [regPin,setRegPin]         = useState("");
   const [regConfirm,setRegConfirm] = useState("");
@@ -702,8 +714,13 @@ function ProfilePage({ user, saveUser, navigate }) {
     if(!/^\d{4}$/.test(regPin))return setError("PIN must be exactly 4 digits.");
     if(regPin!==regConfirm)return setError("PINs do not match. Please re-enter.");
     clr();setBusy(true);
+    const result = await apiSaveUser({...form,email:form.email.trim().toLowerCase(),pin:regPin});
+    setBusy(false);
+    if(!result||result.error){
+      return setError(result?.error||"Could not connect to server. Please check your connection and try again.");
+    }
     await saveUser({...form,email:form.email.trim().toLowerCase(),pin:regPin,createdAt:new Date().toISOString(),totalTokens:0});
-    setBusy(false);navigate("home");
+    navigate("home");
   };
 
   const handleLogin = async () => {
@@ -1257,8 +1274,9 @@ export default function App() {
   const [user,setUser]         = useState(null);
   const [exercise,setExercise] = useState(EXERCISES[0]);
   const [targetReps,setTargetReps] = useState(20);
-  const [adminAuth,setAdminAuth]   = useState(false);
-  const [adminToken,setAdminToken] = useState(null);
+  const [adminAuth,setAdminAuth]       = useState(false);
+  const [adminToken,setAdminToken]     = useState(null);
+  const [profileMode,setProfileMode]   = useState(null);
 
   // ★ On app load — restore session from localStorage cache,
   //   then refresh from database
@@ -1280,6 +1298,7 @@ export default function App() {
           setUser(dbUser);
           save("user", dbUser);
           if(dbUser.mustChangePin){
+            setProfileMode("change-pin");
             setPage("profile");
           }
         }
@@ -1301,6 +1320,7 @@ export default function App() {
     if(opts.exercise) setExercise(opts.exercise);
     if(opts.target)   setTargetReps(opts.target);
     if(pg!=="admin")  setAdminAuth(false);
+    if(pg!=="profile") setProfileMode(null);
     setPage(pg);
   };
 
@@ -1362,7 +1382,7 @@ export default function App() {
         {page==="exercise-select" &&<ExerciseSelectPage navigate={navigate} user={user} getDailyRemaining={getDailyRemaining}/>}
         {page==="exercise"        &&<ExercisePage exercise={exercise} targetReps={targetReps} user={user} navigate={navigate} addTokens={addTokens} getDailyRemaining={getDailyRemaining}/>}
         {page==="dashboard"       &&<DashboardPage user={user} navigate={navigate}/>}
-        {page==="profile"         &&<ProfilePage user={user} saveUser={saveUser} navigate={navigate}/>}
+        {page==="profile" &&<ProfilePage user={user} saveUser={saveUser} navigate={navigate} startMode={profileMode}/>}
         {page==="disclaimer"      &&<DisclaimerPage/>}
         {!isExercise&&!isAdmin&&<BottomNav page={page} navigate={navigate}/>}
       </div>
