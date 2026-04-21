@@ -75,7 +75,9 @@ async function apiSaveUser(user) {
 // Load user from Railway PostgreSQL by email
 async function apiLoadUser(email) {
   try {
-    const res = await fetch(`${REWARD_API_URL}/api/users/${encodeURIComponent(email)}`);
+    const res = await fetch(`${REWARD_API_URL}/api/users/${encodeURIComponent(email)}`, {
+      headers: { "x-user-email": email },
+    });
     if (!res.ok) return null;
     const data = await res.json();
     // Normalise DB column names to match what the app expects
@@ -750,8 +752,9 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
     if(!/^\d{4}$/.test(newPin))return setError("PIN must be exactly 4 digits.");
     if(newPin==="0000")return setError("Please choose a different PIN — not 0000.");
     if(newPin!==confirmPin)return setError("PINs do not match.");
-    clr();setBusy(true);
     const email=cpEmail||user?.email;
+    if(!email)return setError("Session expired. Please sign in again.");
+    clr();setBusy(true);
     const result=await apiChangePin(email,newPin);
     setBusy(false);
     if(result.error)return setError(result.error);
