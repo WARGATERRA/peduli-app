@@ -878,6 +878,7 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
     const result=await apiChangePin(email,newPin,currentPin);
     setBusy(false);
     if(result.error)return setError(result.error);
+    setCurrentPin("");setNewPin("");setConfirmPin("");
     if(user){navigate("home");}
     else{const r=await apiLogin(email,newPin);if(r.error){setMode("login");return;}await saveUser(normaliseUser(r.user));navigate("home");}
   };
@@ -895,6 +896,7 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
     setBusy(false);
     if(!result||result.error) return setError(result?.error||"Could not save. Please try again.");
     await saveUser({...user,...form});
+    setCurrentPin("");
     setSuccess("✅ Profile saved!");setTimeout(()=>setSuccess(""),3000);
   };
 
