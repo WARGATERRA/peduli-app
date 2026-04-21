@@ -1259,7 +1259,7 @@ function DisclaimerPage() {
     </p>
   </div>
   
-    href={`https://polygonscan.com/token/${PEDULI_CONTRACT}`}
+    <a href={`https://polygonscan.com/token/${PEDULI_CONTRACT}`}
     target="_blank"
     rel="noopener noreferrer"
     style={{ display: "inline-block", fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: T.glow, fontWeight: 600, textDecoration: "none" }}
