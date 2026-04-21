@@ -1166,7 +1166,7 @@ function DisclaimerPage() {
     ],
     [
       "📋 Data & Privacy",
-      "User data including name, email, and wallet address is stored securely in a private database. Wargaterra does not sell, rent, or share personal data with third parties. Wallet addresses recorded on the Polygon blockchain are public by nature of the technology. Camera and movement data captured during exercise sessions is processed entirely on-device via MediaPipe and is never transmitted to or stored by Wargaterra's servers.",
+      "User data including name, email, and wallet address is stored securely in a private database. WARGATERRA does not sell, rent, or share personal data with third parties. Wallet addresses recorded on the Polygon blockchain are public by nature of the technology. Camera and movement data captured during exercise sessions is processed entirely on-device via MediaPipe and is never transmitted to or stored by WARGATERRA's servers.",
     ],
     [
       "⚖️ Regulatory Compliance",
@@ -1248,7 +1248,7 @@ function DisclaimerPage() {
     ✅ OFFICIAL TOKEN CONTRACT
   </p>
   <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#94a3b8", margin: "0 0 10px", lineHeight: 1.6 }}>
-    Always verify you are interacting with the correct PEDULI token on Polygon. Wargaterra will never ask you to approve any other contract address. If someone sends you a different address, it is a scam.
+    Always verify you are interacting with the correct PEDULI token on Polygon. WARGATERRA will never ask you to approve any other contract address. If someone sends you a different address, it is a scam.
   </p>
   <div style={{ background: "#1e2d40", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
     <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 10, color: "#64748b", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
@@ -1277,7 +1277,7 @@ function DisclaimerPage() {
     All movement analysis happens entirely on your own device. No video, no images, and no camera data ever leaves your phone or computer.
   </p>
   <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#15803d", margin: 0, lineHeight: 1.75 }}>
-    PEDULI uses MediaPipe — an open-source AI library by Google — to detect body landmarks in real time directly in your browser. The camera feed is processed locally, frame by frame, and immediately discarded. Wargaterra's servers receive only the final rep count. We have no ability to view, record, or retrieve your camera footage at any point.
+    PEDULI uses MediaPipe — an open-source AI library by Google — to detect body landmarks in real time directly in your browser. The camera feed is processed locally, frame by frame, and immediately discarded. WARGATERRA's servers receive only the final rep count. We have no ability to view, record, or retrieve your camera footage at any point.
   </p>
 </Card>
 
