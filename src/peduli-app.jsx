@@ -133,11 +133,11 @@ async function apiResetPin(email, wallet) {
 }
 
 // Change PIN
-async function apiChangePin(email, newPin) {
+async function apiChangePin(email, newPin, currentPin) {
   try {
     const res = await fetch(`${REWARD_API_URL}/api/users/change-pin`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, newPin }),
+      body: JSON.stringify({ email, newPin, currentPin }),
     });
     return await res.json();
   } catch { return { error: "Could not reach server. Please try again." }; }
@@ -810,6 +810,7 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
   const [fEmail,setFEmail]         = useState("");
   const [fWallet,setFWallet]       = useState("");
   const [cpEmail,setCpEmail]       = useState(user?.email||"");
+  const [currentPin,setCurrentPin] = useState("");
   const [newPin,setNewPin]         = useState("");
   const [confirmPin,setConfirmPin] = useState("");
   const [busy,setBusy]             = useState(false);
@@ -874,7 +875,7 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
     const email=cpEmail||user?.email;
     if(!email)return setError("Session expired. Please sign in again.");
     clr();setBusy(true);
-    const result=await apiChangePin(email,newPin);
+    const result=await apiChangePin(email,newPin,currentPin);
     setBusy(false);
     if(result.error)return setError(result.error);
     if(user){navigate("home");}
@@ -974,6 +975,10 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
             {!user&&<div style={{background:T.accentBg,border:`1px solid ${T.accentBrd}`,borderRadius:10,padding:"10px 12px",marginBottom:16}}>
               <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:T.accentDk,margin:0}}>⚠️ Your PIN was reset. Please set a new PIN to continue.</p>
             </div>}
+            {user&&<>
+              <label style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#64748b",display:"block",marginBottom:4}}>Current PIN</label>
+              <input style={pinInp} type="password" inputMode="numeric" maxLength={4} value={currentPin} onChange={e=>{setCurrentPin(e.target.value.replace(/\D/g,""));clr();}} placeholder="••••"/>
+            </>}
             <label style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#64748b",display:"block",marginBottom:4}}>New 4-Digit PIN</label>
             <input style={pinInp} type="password" inputMode="numeric" maxLength={4} value={newPin} onChange={e=>{setNewPin(e.target.value.replace(/\D/g,""));clr();}} placeholder="••••"/>
             <label style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#64748b",display:"block",marginBottom:4}}>Confirm New PIN</label>
