@@ -322,90 +322,179 @@ function Card({ children, style={} }) {
 function HomePage({ navigate, user }) {
   const total=user?.totalTokens||0;
   const tapRef=useRef(0),tapTimer=useRef(null);
+  const [activeUseCase,setActiveUseCase]=useState(null);
   const handleTitleTap=()=>{
     tapRef.current+=1;clearTimeout(tapTimer.current);
     if(tapRef.current>=7){tapRef.current=0;navigate("admin");return;}
     tapTimer.current=setTimeout(()=>{tapRef.current=0;},3000);
   };
+
+  const useCases=[
+    {
+      id:"challenger",
+      icon:"🏆",
+      title:"Self-Challenger",
+      hook:"Put your money where your muscles are",
+      desc:"Add your own capital to the PEDULI liquidity pool. The only way to earn it back is to exercise. Others can earn from the same pool too — so the clock is always ticking. Discipline has never been this financially compelling.",
+      cta:"Start Challenging Yourself",
+      color:"#1a5da8",
+    },
+    {
+      id:"parent",
+      icon:"👨‍👩‍👧",
+      title:"Parent",
+      hook:"Pocket money they actually earn",
+      desc:"Reward your children with PEDULI tokens for completing exercises. You define what each token is worth to your family. They build healthy habits, financial literacy, and a little crypto portfolio — one rep at a time.",
+      cta:"Set Up Family Rewards",
+      color:"#7c3aed",
+    },
+    {
+      id:"community",
+      icon:"🤝",
+      title:"Extra Income Seeker",
+      hook:"Your effort is your capital.",
+      desc:"Whether you've just lost a job, going through a tough patch, or simply want an extra income stream — PEDULI asks nothing of you except movement. Exercise, earn tokens, exchange them when you're ready. Your effort is enough.",
+      cta:"Start Earning Now",
+      color:"#0891b2",
+    },
+    {
+      id:"csr",
+      icon:"🏢",
+      title:"CSR Contributor",
+      hook:"Turn giving into lasting impact",
+      desc:"Companies and individuals can contribute to the PEDULI liquidity pool on Uniswap. Every ringgit or dollar added directly increases the value of tokens earned through sweat and effort. Transparent, on-chain, and permanent.",
+      cta:"Contribute to the Pool",
+      color:"#b45309",
+    },
+  ];
+
   return(
-    <div style={{minHeight:"100vh",background:`linear-gradient(160deg,${T.heroFrom} 0%,${T.heroMid} 40%,${T.heroTo} 100%)`,padding:"0 0 80px"}}>
+    <div style={{minHeight:"100vh",background:`linear-gradient(160deg,${T.heroFrom} 0%,${T.heroMid} 50%,${T.heroTo} 100%)`,paddingBottom:80}}>
+
+      {/* ── HERO ── */}
       <div style={{padding:"40px 24px 28px",textAlign:"center"}}>
-        <img src="/logo.svg" alt="PEDULI" style={{width:90,height:90,marginBottom:8,objectFit:"contain"}}/>
-        <h1 onClick={handleTitleTap} style={{fontFamily:"'Unbounded',sans-serif",fontWeight:900,fontSize:32,color:"#fff",margin:"0 0 6px",letterSpacing:"-1px",lineHeight:1.1,cursor:"default",userSelect:"none"}}>PEDULI</h1>
-        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:14,margin:"0 0 20px",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase"}}>Move · Earn · Empower</p>
+        <img onClick={handleTitleTap} src="/logo.svg" alt="PEDULI" style={{width:90,height:90,marginBottom:12,objectFit:"contain",cursor:"default",userSelect:"none"}}/>
+        <h1 style={{fontFamily:"'Unbounded',sans-serif",fontWeight:900,fontSize:30,color:"#fff",margin:"0 0 8px",letterSpacing:"-1px",lineHeight:1.1}}>PEDULI</h1>
+        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:13,margin:"0 0 6px",fontWeight:500,letterSpacing:"0.12em",textTransform:"uppercase"}}>Move · Earn · Empower</p>
+        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#94a3b8",fontSize:12,margin:"0 0 24px",lineHeight:1.6,maxWidth:300,marginLeft:"auto",marginRight:"auto"}}>
+          PEDULI doesn't ask who you are or why you're here. It just rewards you for moving.
+        </p>
+
+        {/* Logged in greeting */}
         {user?(
-          <div style={{background:"rgba(255,255,255,0.08)",borderRadius:16,padding:"14px 20px",display:"inline-block",backdropFilter:"blur(8px)"}}>
-            <p style={{color:T.glowSoft,fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,margin:"0 0 4px"}}>Welcome back, {user.name?.split(" ")[0]}! 👋</p>
+          <div style={{background:"rgba(255,255,255,0.08)",borderRadius:16,padding:"14px 20px",display:"inline-block",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,0.12)"}}>
+            <p style={{color:T.glowSoft,fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,margin:"0 0 6px"}}>Welcome back, {user.name?.split(" ")[0]}! 👋</p>
             <TokenBadge amount={total} size="lg"/>
+            <p style={{color:"#64748b",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,margin:"6px 0 0"}}>total PEDULI earned</p>
           </div>
         ):(
-          <div style={{background:"rgba(255,255,255,0.08)",borderRadius:16,padding:"14px 20px",backdropFilter:"blur(8px)"}}>
-            <p style={{color:T.glowSoft,fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,margin:0,lineHeight:1.7}}>🎁 Every rep earns <strong>1 PEDULI token</strong>.<br/>Self-challenger, parent, or community member —<br/>register to save your rewards!</p>
+          <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+            <button onClick={()=>navigate("profile")}
+              style={{background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:12,padding:"12px 24px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              JOIN FREE →
+            </button>
+            <button onClick={()=>navigate("disclaimer")}
+              style={{background:"rgba(255,255,255,0.08)",color:T.glow,border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,padding:"12px 24px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:600,fontSize:12,cursor:"pointer"}}>
+              Learn More
+            </button>
           </div>
         )}
       </div>
-      <div style={{padding:"0 16px"}}>
-        <div style={{background:"rgba(255,255,255,0.05)",borderRadius:24,padding:"20px 16px",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,0.10)"}}>
-          <h2 style={{fontFamily:"'Unbounded',sans-serif",color:"#fff",fontSize:13,fontWeight:700,margin:"0 0 14px",letterSpacing:"0.05em"}}>CHOOSE YOUR EXERCISE</h2>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            {EXERCISES.map(ex=>(
-              <button key={ex.id} onClick={()=>navigate("exercise-select",{exercise:ex})}
-                style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:14,padding:"14px 10px",cursor:"pointer",textAlign:"center",transition:"all 0.2s",display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
-                <span style={{fontSize:28}}>{ex.emoji}</span>
-                <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:600,fontSize:11,color:"#e2e8f0",lineHeight:1.3}}>{ex.name}</span>
+
+      {/* ── USE CASES ── */}
+      <div style={{padding:"0 16px 16px"}}>
+        <div style={{background:"rgba(255,255,255,0.04)",borderRadius:24,padding:"20px 16px",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:11,margin:"0 0 14px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",textAlign:"center"}}>Who is PEDULI for?</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:activeUseCase?14:0}}>
+            {useCases.map(uc=>(
+              <button key={uc.id} onClick={()=>setActiveUseCase(activeUseCase?.id===uc.id?null:uc)}
+                style={{background:activeUseCase?.id===uc.id?`${uc.color}22`:"rgba(255,255,255,0.05)",border:`1.5px solid ${activeUseCase?.id===uc.id?uc.color:"rgba(255,255,255,0.10)"}`,borderRadius:14,padding:"14px 10px",cursor:"pointer",textAlign:"center",transition:"all 0.25s"}}>
+                <div style={{fontSize:24,marginBottom:6}}>{uc.icon}</div>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:11,color:activeUseCase?.id===uc.id?"#fff":"#cbd5e1",margin:0,lineHeight:1.3}}>{uc.title}</p>
               </button>
             ))}
           </div>
+
+          {/* Expanded use case detail */}
+          {activeUseCase&&(
+            <div style={{background:`${activeUseCase.color}18`,border:`1px solid ${activeUseCase.color}44`,borderRadius:16,padding:"16px",animation:"fadeIn 0.2s ease"}}>
+              <p style={{fontFamily:"'Unbounded',sans-serif",fontSize:13,color:"#fff",margin:"0 0 6px",fontWeight:700}}>{activeUseCase.hook}</p>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#94a3b8",margin:"0 0 14px",lineHeight:1.7}}>{activeUseCase.desc}</p>
+              {activeUseCase.id==="csr"?(
+                <a href="https://app.uniswap.org/explore/tokens/polygon/0xae9abf1090eb04e1b6e83851013c3d8f1189d8c9"
+                  target="_blank" rel="noopener noreferrer"
+                  style={{display:"block",width:"100%",background:activeUseCase.color,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",textDecoration:"none",boxSizing:"border-box"}}>
+                  💧 OPEN UNISWAP →
+                </a>
+              ):(
+                <button onClick={()=>navigate(activeUseCase.id==="challenger"?"exercise-select":activeUseCase.id==="parent"?"exercise-select":"profile")}
+                  style={{width:"100%",background:activeUseCase.color,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                  {activeUseCase.cta.toUpperCase()} →
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
-      <div style={{padding:"16px 16px 0"}}>
-        <Card style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.10)",backdropFilter:"blur(8px)"}}>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:12,margin:"0 0 10px",fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase"}}>How It Works</p>
-          {[["💪 Move Your Body","Pick any exercise, complete reps with your camera as witness"],["🪙 Earn PEDULI","1 rep = 1 PEDULI token, up to 100 per exercise per day"],["💸 Your Tokens, Your Value","Hold, exchange on Uniswap, or redeem however you define it"]].map(([t,d])=>(
-            <div key={t} style={{marginBottom:10}}>
-              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:13,color:"#fff",margin:"0 0 2px"}}>{t}</p>
-              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#94a3b8",margin:0}}>{d}</p>
-            </div>
-          ))}
-        </Card>
-      </div>
 
-      <div style={{padding:"16px 16px 0"}}>
-        <Card style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.10)",backdropFilter:"blur(8px)"}}>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:12,margin:"0 0 12px",fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase"}}>Who Is PEDULI For?</p>
+      {/* ── HOW IT WORKS ── */}
+      <div style={{padding:"0 16px 16px"}}>
+        <div style={{background:"rgba(255,255,255,0.04)",borderRadius:24,padding:"20px 16px",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:11,margin:"0 0 16px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",textAlign:"center"}}>How It Works</p>
           {[
-            ["🏆","The Self-Challenger","Put your own capital into the PEDULI liquidity pool. The only way to get it back is to earn it through exercise. Time pressure included — others can earn from the same pool too."],
-            ["👨‍👩‍👧","Parents & Children","Reward your kids with PEDULI tokens as pocket money for exercise. You define what each token is worth to your family — they build healthy habits and crypto literacy at the same time."],
-            ["🤝","Underprivileged Communities","No capital needed. Just a device, internet, and the will to move. Earn PEDULI anytime, exchange it later at market rate on any DEX or CEX."],
-            ["🏢","CSR & Corporate Giving","Companies and individuals can contribute to the PEDULI liquidity pool on Uniswap. The deeper the pool, the more token holders benefit — a direct link between giving and impact."],
-          ].map(([icon,title,desc])=>(
-            <div key={title} style={{display:"flex",gap:12,marginBottom:14,alignItems:"flex-start"}}>
-              <div style={{fontSize:24,flexShrink:0,marginTop:2}}>{icon}</div>
+            {step:"01",icon:"📷",title:"Exercise on Camera",desc:"Pick an exercise. Your camera tracks your reps using AI pose detection — no equipment needed."},
+            {step:"02",icon:"🪙",title:"Earn PEDULI Tokens",desc:"Every rep earns 1 PEDULI token, sent automatically to your Polygon wallet. Up to 100 per exercise per day."},
+            {step:"03",icon:"💸",title:"Exchange or Hold",desc:"Trade your PEDULI on Uniswap or any DEX. Or hold and watch it grow. Every person who adds liquidity to the pool increases the value for everyone who earned it through effort."},
+          ].map(item=>(
+            <div key={item.step} style={{display:"flex",gap:14,marginBottom:16,alignItems:"flex-start"}}>
+              <div style={{background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"8px",minWidth:40,textAlign:"center",flexShrink:0}}>
+                <p style={{fontFamily:"'Unbounded',sans-serif",fontSize:9,color:T.glowMid,margin:"0 0 2px",fontWeight:700}}>{item.step}</p>
+                <span style={{fontSize:18}}>{item.icon}</span>
+              </div>
               <div>
-                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:13,color:"#fff",margin:"0 0 3px"}}>{title}</p>
-                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#94a3b8",margin:0,lineHeight:1.6}}>{desc}</p>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:13,color:"#fff",margin:"0 0 3px"}}>{item.title}</p>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#94a3b8",margin:0,lineHeight:1.6}}>{item.desc}</p>
               </div>
             </div>
           ))}
-        </Card>
+        </div>
       </div>
 
-      <div style={{padding:"16px 16px 0"}}>
-        <Card style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.10)",backdropFilter:"blur(8px)"}}>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:12,margin:"0 0 8px",fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase"}}>💧 Support the Liquidity Pool</p>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#94a3b8",margin:"0 0 12px",lineHeight:1.6}}>
-            Add PEDULI liquidity on Uniswap to grow the ecosystem. Pair PEDULI with MATIC and earn trading fees while supporting the community.
-          </p>
-          <a href="https://app.uniswap.org/explore/tokens/polygon/0xae9abf1090eb04e1b6e83851013c3d8f1189d8c9"
-            target="_blank" rel="noopener noreferrer"
-            style={{display:"block",width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:12,padding:"14px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer",textAlign:"center",textDecoration:"none",boxSizing:"border-box"}}>
-            💧 ADD LIQUIDITY ON UNISWAP →
-          </a>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,color:"#475569",margin:"8px 0 0",textAlign:"center"}}>
-            Opens the PEDULI token page on Uniswap. Connect your wallet there to add liquidity or swap.
-          </p>
-        </Card>
+      {/* ── EXERCISE GRID ── */}
+      <div style={{padding:"0 16px 16px"}}>
+        <div style={{background:"rgba(255,255,255,0.04)",borderRadius:24,padding:"20px 16px",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:11,margin:"0 0 14px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",textAlign:"center"}}>Start Earning Now</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            {EXERCISES.map(ex=>(
+              <button key={ex.id} onClick={()=>navigate("exercise-select",{exercise:ex})}
+                style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.10)",borderRadius:14,padding:"16px 10px",cursor:"pointer",textAlign:"center",transition:"all 0.2s",display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+                <span style={{fontSize:28}}>{ex.emoji}</span>
+                <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:600,fontSize:11,color:"#e2e8f0",lineHeight:1.3}}>{ex.name}</span>
+                <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:9,color:T.glowMid,fontWeight:600}}>1 rep = 1 🪙</span>
+              </button>
+            ))}
+          </div>
+          {!user&&(
+            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#64748b",textAlign:"center",margin:"14px 0 0",lineHeight:1.6}}>
+              💡 Register free to save your tokens and receive them in your wallet
+            </p>
+          )}
+        </div>
       </div>
+
+      {/* ── STATS STRIP ── */}
+      <div style={{padding:"0 16px 16px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+          {[["🏋️","4","Exercises"],["🪙","1:1","Rep to Token"],["📅","100","Daily Max"]].map(([icon,val,label])=>(
+            <div key={label} style={{background:"rgba(255,255,255,0.04)",borderRadius:14,padding:"12px 8px",textAlign:"center",border:"1px solid rgba(255,255,255,0.07)"}}>
+              <p style={{fontSize:18,margin:"0 0 4px"}}>{icon}</p>
+              <p style={{fontFamily:"'Unbounded',sans-serif",color:"#fff",fontSize:14,margin:"0 0 2px",fontWeight:900}}>{val}</p>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:9,color:"#64748b",margin:0,textTransform:"uppercase",letterSpacing:"0.05em"}}>{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }
@@ -1722,6 +1811,7 @@ export default function App() {
         input[type=range]{height:6px;}
         @keyframes bounceIn{0%{transform:scale(0.3);opacity:0}60%{transform:scale(1.1)}80%{transform:scale(0.9)}100%{transform:scale(1);opacity:1}}
         @keyframes shakeX{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+        @keyframes fadeIn{0%{opacity:0;transform:translateY(-6px)}100%{opacity:1;transform:translateY(0)}}
         ::-webkit-scrollbar{width:4px;}
         ::-webkit-scrollbar-thumb{background:${T.glow};border-radius:4px;}
       `}</style>
