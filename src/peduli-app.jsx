@@ -1297,7 +1297,7 @@ function DisclaimerPage() {
             <Card style={{ marginBottom: 14, background: T.primaryBg, border: `1.5px solid ${T.primaryBrd}` }}>
   <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 10, color: T.primary, margin: "0 0 10px", letterSpacing: "0.06em" }}>OUR MISSION</p>
   <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, color: "#0f172a", margin: 0, lineHeight: 1.8, fontWeight: 500 }}>
-    PEDULI does not ask who you are or why you are here. It just rewards you for moving. Whether you are a parent building healthy habits with your children, someone looking for an honest extra income stream, an individual who wants financial skin in the game, or a company that wants CSR spending to have real and traceable impact — PEDULI turns movement into value, one rep at a time.
+    PEDULI just rewards you for moving. Whether you are a parent building healthy habits with your children, someone looking for an honest extra income stream, an individual who wants financial skin in the game, or a company that wants CSR spending to have real and traceable impact — PEDULI turns movement into value, one rep at a time.
   </p>
 </Card>
 
