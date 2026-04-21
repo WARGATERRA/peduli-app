@@ -1178,7 +1178,7 @@ function DisclaimerPage() {
 
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg,#0c1e3d,#14447a)", padding: "32px 20px 28px" }}>
-        <img src="/logo.png" alt="PEDULI" style={{ width: 60, height: 60, marginBottom: 10, objectFit: "contain" }}/>
+        <img src="/logo.svg" alt="PEDULI" style={{ width: 60, height: 60, marginBottom: 10, objectFit: "contain" }}/>
         <h1 style={{ fontFamily: "'Unbounded',sans-serif", color: "#fff", fontSize: 22, margin: "0 0 6px", fontWeight: 900 }}>
           About PEDULI
         </h1>
