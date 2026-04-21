@@ -1343,11 +1343,29 @@ function DisclaimerPage() {
   </Card>
 ))}
 
-            <Card style={{ background: "#f8fafc", textAlign: "center" }}>
-              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#94a3b8", margin: 0, lineHeight: 1.7 }}>
-                © {new Date().getFullYear()} <strong style={{ color: "#475569" }}>WARGATERRA</strong>. All rights reserved.
-              </p>
-            </Card>
+            <Card style={{ marginBottom: 14, background: T.primaryBg, border: `1.5px solid ${T.primaryBrd}` }}>
+  <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 10, color: T.primary, margin: "0 0 12px", letterSpacing: "0.06em" }}>
+    GET IN TOUCH
+  </p>
+  <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#475569", margin: "0 0 14px", lineHeight: 1.7 }}>
+    Questions about PEDULI? Want to contribute to the liquidity pool or discuss a CSR partnership? Join our community.
+  </p>
+  <a href="https://t.me/+DBI3CyPsDWQwMTI1"
+    target="_blank" rel="noopener noreferrer"
+    style={{ display: "flex", alignItems: "center", gap: 10, background: T.surface, border: `1px solid ${T.primaryPale}`, borderRadius: 10, padding: "12px 14px", textDecoration: "none" }}>
+    <span style={{ fontSize: 20 }}>✈️</span>
+    <div>
+      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#64748b", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Telegram Community</p>
+      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, color: T.primary, margin: 0, fontWeight: 700 }}>Join the PEDULI Community →</p>
+    </div>
+  </a>
+</Card>
+
+<Card style={{ background: "#f8fafc", textAlign: "center" }}>
+  <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#94a3b8", margin: 0, lineHeight: 1.7 }}>
+    © {new Date().getFullYear()} <strong style={{ color: "#475569" }}>Wargaterra</strong>. All rights reserved.
+  </p>
+</Card>
           </>
         )}
 
