@@ -433,8 +433,10 @@ function ExerciseSelectPage({ navigate, user, getDailyRemaining }) {
 ──────────────────────────────────────────────── */
 function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDailyRemaining }) {
   const videoRef=useRef(null),canvasRef=useRef(null);
+  const checkVideoRef=useRef(null),checkCanvasRef=useRef(null);
   const detectorRef=useRef(new RepDetector(exercise.id));
   const poseRef=useRef(null),cameraRef=useRef(null);
+  const checkPoseRef=useRef(null),checkCameraRef=useRef(null);
   const [count,setCount]=useState(0);
   const [feedback,setFeedback]=useState("Loading camera...");
   const [poseReady,setPoseReady]=useState(false);
@@ -443,6 +445,9 @@ function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDail
   const [tokensEarned,setTokensEarned]=useState(0);
   const [txStatus,setTxStatus]=useState(null);
   const [txHash,setTxHash]=useState(null);
+  const [phase,setPhase]=useState("check"); // "check" | "exercise"
+  const [bodyDetected,setBodyDetected]=useState(false);
+  const [checkReady,setCheckReady]=useState(false);
   const countRef=useRef(0),completedRef=useRef(false);
   const effectiveTarget=Math.min(targetReps,getDailyRemaining(exercise.id));
 
@@ -457,7 +462,6 @@ function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDail
     if(txResult.success){
       setTxStatus("success");
       setTxHash(txResult.txHash);
-      // Update serverDailyRemaining so UI reflects correct remaining today
       if(txResult.dailyRemaining!==undefined){
         setUser(prev=>{
           if(!prev)return prev;
@@ -470,6 +474,7 @@ function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDail
     else{setTxStatus("failed");}
   };
 
+  // Load MediaPipe scripts once
   useEffect(()=>{
     const loadScript=src=>new Promise((res,rej)=>{
       if(document.querySelector(`script[src="${src}"]`))return res();
@@ -479,12 +484,47 @@ function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDail
       loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"),
       loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"),
       loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"),
-    ]).then(()=>setPoseReady(true)).catch(()=>{setCameraError(true);setFeedback("AI unavailable.");});
-    return()=>{cameraRef.current?.stop?.();poseRef.current?.close?.();};
+    ]).then(()=>setPoseReady(true)).catch(()=>{setCameraError(true);});
+    return()=>{
+      cameraRef.current?.stop?.();poseRef.current?.close?.();
+      checkCameraRef.current?.stop?.();checkPoseRef.current?.close?.();
+    };
   },[]);
 
+  // ── CAMERA CHECK PHASE ──────────────────────────────────────────────────────
   useEffect(()=>{
-    if(!poseReady||!videoRef.current||!canvasRef.current)return;
+    if(!poseReady||phase!=="check"||!checkVideoRef.current||!checkCanvasRef.current)return;
+    try{
+      const pose=new window.Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`});
+      pose.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+      pose.onResults(results=>{
+        const canvas=checkCanvasRef.current;if(!canvas)return;
+        const ctx=canvas.getContext("2d");
+        ctx.save();ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.scale(-1,1);ctx.translate(-canvas.width,0);
+        if(results.image)ctx.drawImage(results.image,0,0,canvas.width,canvas.height);
+        const detected=!!(results.poseLandmarks&&results.poseLandmarks.length>=25);
+        setBodyDetected(detected);
+        if(detected){
+          window.drawConnectors?.(ctx,results.poseLandmarks,window.POSE_CONNECTIONS,{color:"rgba(41,128,212,0.8)",lineWidth:2});
+          window.drawLandmarks?.(ctx,results.poseLandmarks,{color:"#60a5fa",lineWidth:1,radius:3});
+        }
+        ctx.restore();
+        setCheckReady(true);
+      });
+      checkPoseRef.current=pose;
+      const cam=new window.Camera(checkVideoRef.current,{
+        onFrame:async()=>{if(checkVideoRef.current)await pose.send({image:checkVideoRef.current});},
+        width:640,height:480
+      });
+      checkCameraRef.current=cam;
+      cam.start().catch(()=>{setCameraError(true);});
+    }catch{setCameraError(true);}
+  },[poseReady,phase]);
+
+  // ── EXERCISE PHASE ──────────────────────────────────────────────────────────
+  useEffect(()=>{
+    if(!poseReady||phase!=="exercise"||!videoRef.current||!canvasRef.current)return;
     try{
       const pose=new window.Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`});
       pose.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
@@ -514,11 +554,20 @@ function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDail
         ctx.restore();
       });
       poseRef.current=pose;
-      const cam=new window.Camera(videoRef.current,{onFrame:async()=>{if(videoRef.current)await pose.send({image:videoRef.current});},width:640,height:480});
+      const cam=new window.Camera(videoRef.current,{
+        onFrame:async()=>{if(videoRef.current)await pose.send({image:videoRef.current});},
+        width:640,height:480
+      });
       cameraRef.current=cam;
       cam.start().catch(()=>{setCameraError(true);setFeedback("Camera access denied.");});
     }catch{setCameraError(true);setFeedback("Pose detection failed.");}
-  },[poseReady]);
+  },[poseReady,phase]);
+
+  const startExercise=()=>{
+    checkCameraRef.current?.stop?.();
+    checkPoseRef.current?.close?.();
+    setPhase("exercise");
+  };
 
   const handleStop=()=>{
     cameraRef.current?.stop?.();poseRef.current?.close?.();
@@ -526,6 +575,7 @@ function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDail
     else if(count===0)navigate("exercise-select");
   };
 
+  // ── COMPLETED SCREEN ───────────────────────────────────────────────────────
   if(completed)return(
     <div style={{minHeight:"100vh",background:`linear-gradient(160deg,${T.heroFrom},${T.heroMid})`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
       <div style={{fontSize:72,marginBottom:16}}>🎉</div>
@@ -558,6 +608,69 @@ function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDail
     </div>
   );
 
+  // ── CAMERA CHECK SCREEN ────────────────────────────────────────────────────
+  if(phase==="check")return(
+    <div style={{position:"relative",height:"100vh",overflow:"hidden",background:"#000"}}>
+      <video ref={checkVideoRef} style={{display:"none"}} playsInline muted/>
+      <canvas ref={checkCanvasRef} width={640} height={480} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+
+      {/* Top bar */}
+      <div style={{position:"absolute",top:0,left:0,right:0,background:"linear-gradient(to bottom,rgba(0,0,0,0.75),transparent)",padding:"16px 16px 32px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <button onClick={()=>navigate("exercise-select")} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:10,padding:"8px 14px",color:"#fff",fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:600,fontSize:13,cursor:"pointer"}}>✕ Cancel</button>
+        <p style={{fontFamily:"'Unbounded',sans-serif",color:"#fff",fontSize:12,margin:0,fontWeight:700}}>{exercise.emoji} {exercise.name}</p>
+        <div style={{width:60}}/>
+      </div>
+
+      {/* Bottom instructions */}
+      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(to top,rgba(0,0,0,0.92),transparent)",padding:"32px 20px 40px"}}>
+
+        {!checkReady&&(
+          <div style={{textAlign:"center",marginBottom:16}}>
+            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:14,margin:0}}>⏳ Starting camera…</p>
+          </div>
+        )}
+
+        {checkReady&&(
+          <>
+            {/* Detection status */}
+            <div style={{background:bodyDetected?"rgba(34,197,94,0.15)":"rgba(239,68,68,0.15)",border:`1px solid ${bodyDetected?"rgba(34,197,94,0.4)":"rgba(239,68,68,0.4)"}`,borderRadius:14,padding:"12px 16px",marginBottom:16,textAlign:"center"}}>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:15,fontWeight:700,color:bodyDetected?"#4ade80":"#fca5a5",margin:"0 0 4px"}}>
+                {bodyDetected?"✅ Body detected — tracking ready!":"❌ Body not detected"}
+              </p>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#94a3b8",margin:0}}>
+                {bodyDetected
+                  ?"You can start your exercise now"
+                  :"Step back so your full body is visible in the frame"}
+              </p>
+            </div>
+
+            {/* Tips */}
+            {!bodyDetected&&(
+              <div style={{background:"rgba(255,255,255,0.06)",borderRadius:12,padding:"12px 16px",marginBottom:16}}>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#94a3b8",margin:0,lineHeight:1.7}}>
+                  💡 Tips: Make sure you are well lit · Step back 1–2 metres · Keep your full body in frame · Avoid dark clothing on dark backgrounds
+                </p>
+              </div>
+            )}
+
+            {/* Start button */}
+            <button onClick={startExercise} disabled={!bodyDetected}
+              style={{width:"100%",background:bodyDetected?`linear-gradient(135deg,${T.primary},${T.primaryLt})`:"rgba(255,255,255,0.1)",color:bodyDetected?"#fff":"#64748b",border:"none",borderRadius:14,padding:"18px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:16,cursor:bodyDetected?"pointer":"not-allowed",transition:"all 0.3s"}}>
+              {bodyDetected?"🚀 START EXERCISE":"Waiting for body detection…"}
+            </button>
+          </>
+        )}
+
+        {cameraError&&(
+          <div style={{background:"rgba(239,68,68,0.15)",borderRadius:12,padding:"10px 14px",textAlign:"center",marginTop:12}}>
+            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#fca5a5",fontSize:12,margin:0}}>📷 Camera required. Please allow camera access and refresh.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // ── EXERCISE SCREEN ────────────────────────────────────────────────────────
   return(
     <div style={{position:"relative",height:"100vh",overflow:"hidden",background:"#000"}}>
       <video ref={videoRef} style={{display:"none"}} playsInline muted/>
