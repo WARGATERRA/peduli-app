@@ -377,7 +377,7 @@ function HomePage({ navigate, user }) {
         <h1 style={{fontFamily:"'Unbounded',sans-serif",fontWeight:900,fontSize:30,color:"#fff",margin:"0 0 8px",letterSpacing:"-1px",lineHeight:1.1}}>PEDULI</h1>
         <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:13,margin:"0 0 6px",fontWeight:500,letterSpacing:"0.12em",textTransform:"uppercase"}}>Move · Earn · Empower</p>
         <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#94a3b8",fontSize:12,margin:"0 0 24px",lineHeight:1.6,maxWidth:300,marginLeft:"auto",marginRight:"auto"}}>
-          PEDULI doesn't ask who you are or why you're here. It just rewards you for moving.
+          PEDULI rewards you for moving.
         </p>
 
         {/* Logged in greeting */}
