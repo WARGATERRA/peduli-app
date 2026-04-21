@@ -1074,36 +1074,160 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
    DISCLAIMER PAGE
 ──────────────────────────────────────────────── */
 function DisclaimerPage() {
-  return(
-    <div style={{minHeight:"100vh",background:T.surface,paddingBottom:80}}>
-      <div style={{background:"linear-gradient(135deg,#1e293b,#334155)",padding:"28px 20px 20px"}}>
-        <div style={{fontSize:32,marginBottom:8}}>⚖️</div>
-        <h1 style={{fontFamily:"'Unbounded',sans-serif",color:"#fff",fontSize:20,margin:"0 0 4px",fontWeight:900}}>Disclaimer &amp; Terms</h1>
-        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#94a3b8",fontSize:12,margin:0}}>A CSR Initiative by WargaTerra Enterprise</p>
+  const USE_CASES = [
+    {
+      emoji: "🔒",
+      title: "The Self-Challenger",
+      desc: "Add your own capital into the PEDULI liquidity pool on Uniswap. The only way to reclaim value is to earn it — rep by rep. The pressure is real: other users are exercising simultaneously and drawing from the same pool. Move first, or let someone else claim what could have been yours. PEDULI turns procrastination into a financial cost.",
+    },
+    {
+      emoji: "👨‍👩‍👧",
+      title: "Parents & Children",
+      desc: "Reward your children's physical activity with real digital tokens. The more they exercise, the more PEDULI they earn — straight into their crypto wallet. You decide what each token is worth as pocket money in your household. The blockchain records every rep honestly. When they're ready, they can exchange at market rate too.",
+    },
+    {
+      emoji: "🌍",
+      title: "Community Empowerment",
+      desc: "No capital required. No gatekeepers. If you have a smartphone and the willingness to move, PEDULI gives you a path to earn. Designed with underprivileged communities in mind — complete exercises, collect tokens, exchange them later on Uniswap or any DEX. Honest reward for honest effort.",
+    },
+    {
+      emoji: "🤝",
+      title: "CSR & Liquidity Providers",
+      desc: "Companies and individuals can contribute by adding capital to the PEDULI liquidity pool on Uniswap. The stronger the pool, the more meaningful each token reward becomes for every person who earns it through exercise. This is CSR with measurable human impact — every token earned represents a rep completed.",
+    },
+  ];
+
+  const DISCLAIMERS = [
+    [
+      "⚠️ Health & Physical Safety",
+      "Participation in any exercise programme carries inherent physical risk. PEDULI exercises are for general wellness purposes only. Users must consult a qualified medical professional before beginning any exercise programme, particularly if they have pre-existing medical conditions, injuries, disabilities, or are pregnant. By using PEDULI, you confirm that you are physically capable of performing the selected exercises. WARGATERRA, its developers, and affiliates accept no liability whatsoever for any injury, accident, health complication, or physical harm arising from use of this application.",
+    ],
+    [
+      "📊 Not Financial Advice",
+      "Nothing on this platform constitutes financial, investment, legal, or tax advice of any kind. PEDULI does not recommend that you purchase, sell, hold, or exchange any token or digital asset. All decisions regarding your participation in any liquidity pool, token exchange, or digital asset activity are made entirely at your own risk. WARGATERRA does not guarantee any monetary return, token value, or exchange rate at any time.",
+    ],
+    [
+      "🪙 Token Utility — Not an Investment",
+      "The PEDULI token (ticker: PEDULI) is a utility reward token. It is issued solely as an incentive for completing physical exercise activities within the PEDULI programme. It is NOT a security, financial instrument, investment product, or store of value. Any market value that PEDULI tokens may acquire via third-party platforms such as Uniswap arises independently of WARGATERRA's actions. Token values may fluctuate significantly or drop to zero.",
+    ],
+    [
+      "💧 Liquidity Pool Participation Risk",
+      "Users who choose to add capital to the PEDULI liquidity pool on Uniswap or any other DEX do so entirely of their own accord. WARGATERRA does not operate, control, or guarantee any liquidity pool. Liquidity provision carries risks including but not limited to impermanent loss, smart contract vulnerabilities, and total loss of deposited capital. This is not a managed fund or savings product.",
+    ],
+    [
+      "⚙️ Operational Fee",
+      "To sustain the infrastructure, operations, and continued development of the PEDULI programme, WARGATERRA retains 20% of the PEDULI tokens generated from each exercise session. This fee covers blockchain gas costs, server operations, and programme maintenance. This deduction occurs automatically at the time of each reward transfer and is non-negotiable.",
+    ],
+    [
+      "🔐 Blockchain & Technical Risks",
+      "Participation in blockchain-based reward systems carries inherent technical risks including network congestion, smart contract vulnerabilities, loss of private keys, wallet incompatibility, and regulatory changes that may affect token transferability. WARGATERRA makes no guarantees regarding the availability, speed, or reliability of blockchain transactions.",
+    ],
+    [
+      "🛡️ Limitation of Liability",
+      "To the fullest extent permitted by applicable law, WARGATERRA, its founders, directors, employees, and affiliates shall not be liable for any direct, indirect, incidental, consequential, or punitive damages arising from use of the PEDULI platform, token, or associated liquidity activities — including but not limited to physical injury, financial loss, data loss, or loss of token value.",
+    ],
+    [
+      "📋 Data & Privacy",
+      "User data including name, email, and wallet address is stored securely in a private database. WARGATERRA does not sell, rent, or share personal data with third parties. Wallet addresses recorded on the Polygon blockchain are public by nature of the technology.",
+    ],
+    [
+      "⚖️ Regulatory Compliance",
+      "The regulatory status of utility tokens and blockchain reward programmes varies by jurisdiction. It is your responsibility to ensure that your participation in PEDULI complies with the laws of your country of residence. WARGATERRA reserves the right to suspend, modify, or terminate the PEDULI programme at any time to ensure compliance with applicable laws and regulations.",
+    ],
+  ];
+
+  return (
+    <div style={{ minHeight: "100vh", background: T.surface, paddingBottom: 80 }}>
+
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg,#0c1e3d,#14447a)", padding: "32px 20px 28px" }}>
+        <div style={{ fontSize: 36, marginBottom: 10 }}>🤝</div>
+        <h1 style={{ fontFamily: "'Unbounded',sans-serif", color: "#fff", fontSize: 22, margin: "0 0 6px", fontWeight: 900 }}>
+          About PEDULI
+        </h1>
+        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: T.glow, fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+          A CSR initiative by WARGATERRA · Built on Polygon
+        </p>
       </div>
-      <div style={{padding:16}}>
-        {[
-          ["About PEDULI","PEDULI is a Corporate Social Responsibility (CSR) and Social Enterprise initiative developed and operated by WargaTerra Enterprise. The PEDULI program is designed to incentivise physical health and wellness among underprivileged communities by rewarding physical exercise activities with digital tokens on the Polygon blockchain network."],
-          ["Not an Investment Product","The PEDULI token (ticker: PEDULI) is NOT an investment product, security, financial instrument, or store of value. It is a utility reward token issued solely as a participation incentive within the PEDULI wellness program."],
-          ["No Investment Advice","Nothing on this platform constitutes financial, investment, legal, or tax advice. WargaTerra Enterprise does not guarantee any monetary value, exchange rate, or return on any PEDULI tokens earned or held."],
-          ["Token Value & Liquidity","Any value attributed to PEDULI tokens via third-party platforms such as Uniswap arises independently of WargaTerra Enterprise's actions. Token values may fluctuate or drop to zero."],
-          ["Participation Risks","Users acknowledge that participation in blockchain-based reward systems carries inherent risks including technical failures, smart contract vulnerabilities, loss of private keys, and regulatory changes."],
-          ["Health & Safety","Exercise activities are for general wellness. Consult a medical professional before starting any exercise programme, particularly with pre-existing conditions."],
-          ["Data & Privacy","User data is stored securely in a private database. WargaTerra Enterprise does not sell or share personal data with third parties."],
-          ["Limitation of Liability","WargaTerra Enterprise shall not be liable for any damages arising from use of the PEDULI platform or token to the fullest extent permitted by law."],
-          ["Regulatory Compliance","WargaTerra Enterprise reserves the right to suspend or modify the PEDULI programme to ensure compliance with applicable laws."],
-        ].map(([title,text])=>(
-          <Card key={title} style={{marginBottom:12}}>
-            <h3 style={{fontFamily:"'Unbounded',sans-serif",fontSize:12,color:T.primary,margin:"0 0 8px",fontWeight:700}}>{title.toUpperCase()}</h3>
-            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#475569",margin:0,lineHeight:1.7}}>{text}</p>
-          </Card>
-        ))}
-        <Card style={{background:"#f8fafc",marginBottom:12}}>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#94a3b8",margin:0,textAlign:"center",lineHeight:1.6}}>
-            © {new Date().getFullYear()} <strong style={{color:"#475569"}}>WargaTerra Enterprise</strong>. All rights reserved.<br/>
-            Last updated: {new Date().toLocaleDateString("en-MY",{year:"numeric",month:"long"})}
+
+      <div style={{ padding: 16 }}>
+
+        {/* Mission Statement */}
+        <Card style={{ marginBottom: 16, background: T.primaryBg, border: `1.5px solid ${T.primaryBrd}` }}>
+          <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 11, color: T.primary, margin: "0 0 10px", letterSpacing: "0.06em" }}>
+            OUR MISSION
+          </p>
+          <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 14, color: "#0f172a", margin: 0, lineHeight: 1.75, fontWeight: 500 }}>
+            PEDULI exists to make physical activity genuinely rewarding — not just for health, but financially. We built a system where every rep earns a real digital token, backed by real liquidity. Whether you are a parent motivating your children, an individual challenging yourself, or a company directing CSR funds toward community wellness — PEDULI turns movement into value.
           </p>
         </Card>
+
+        {/* Who Is This For */}
+        <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 11, color: "#64748b", margin: "0 0 10px 2px", letterSpacing: "0.06em" }}>
+          WHO IS THIS FOR
+        </p>
+        {USE_CASES.map(({ emoji, title, desc }) => (
+          <Card key={title} style={{ marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <span style={{ fontSize: 28, flexShrink: 0, marginTop: 2 }}>{emoji}</span>
+              <div>
+                <h3 style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 12, color: "#0f172a", margin: "0 0 6px", fontWeight: 900 }}>
+                  {title}
+                </h3>
+                <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#475569", margin: 0, lineHeight: 1.75 }}>
+                  {desc}
+                </p>
+              </div>
+            </div>
+          </Card>
+        ))}
+
+        {/* How the token works */}
+        <Card style={{ marginBottom: 16, background: "#fffbeb", border: `1.5px solid ${T.accentBrd}` }}>
+          <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 11, color: T.accentDk, margin: "0 0 10px", letterSpacing: "0.06em" }}>
+            HOW THE TOKEN WORKS
+          </p>
+          {[
+            ["1 Rep = 1 PEDULI", "Every completed rep earns one PEDULI token, transferred directly to your Polygon wallet on-chain."],
+            ["Daily Cap: 100 tokens", "Each exercise has a daily limit of 100 PEDULI tokens to ensure fair distribution."],
+            ["Backed by Liquidity", "PEDULI token value is determined by its liquidity pool on Uniswap. Contributors to the pool increase the value of every token earned."],
+            ["Exchange Freely", "Earned tokens can be exchanged at market rate on Uniswap or any compatible DEX/CEX at any time."],
+          ].map(([title, desc]) => (
+            <div key={title} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: `1px solid ${T.accentBrd}` }}>
+              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 700, fontSize: 13, color: T.accentDk, margin: "0 0 2px" }}>
+                {title}
+              </p>
+              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#78350f", margin: 0, lineHeight: 1.6 }}>
+                {desc}
+              </p>
+            </div>
+          ))}
+        </Card>
+
+        {/* Disclaimers */}
+        <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 11, color: "#64748b", margin: "0 0 10px 2px", letterSpacing: "0.06em" }}>
+          IMPORTANT DISCLAIMERS
+        </p>
+        {DISCLAIMERS.map(([title, text]) => (
+          <Card key={title} style={{ marginBottom: 10 }}>
+            <h3 style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 10, color: T.primary, margin: "0 0 8px", fontWeight: 700, letterSpacing: "0.04em" }}>
+              {title.toUpperCase()}
+            </h3>
+            <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#475569", margin: 0, lineHeight: 1.75 }}>
+              {text}
+            </p>
+          </Card>
+        ))}
+
+        {/* Footer */}
+        <Card style={{ background: "#f8fafc", marginBottom: 12, textAlign: "center" }}>
+          <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#94a3b8", margin: 0, lineHeight: 1.7 }}>
+            © {new Date().getFullYear()} <strong style={{ color: "#475569" }}>WARGATERRA</strong>. All rights reserved.<br />
+            Built on Polygon · Token: PEDULI (ERC-20)<br />
+            Last updated: {new Date().toLocaleDateString("en-MY", { year: "numeric", month: "long" })}
+          </p>
+        </Card>
+
       </div>
     </div>
   );
@@ -1140,7 +1264,7 @@ function AdminLogin({ onSuccess, onCancel }) {
         <div style={{textAlign:"center",marginBottom:32}}>
           <div style={{width:64,height:64,borderRadius:32,background:"linear-gradient(135deg,#1a3a6b,#0f2040)",border:"2px solid #1e3a5f",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 16px"}}>🔒</div>
           <h2 style={{fontFamily:"'Unbounded',sans-serif",color:"#e2e8f0",fontSize:18,margin:"0 0 6px",fontWeight:900}}>Admin Console</h2>
-          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#475569",fontSize:12,margin:0}}>PEDULI · WargaTerra Enterprise</p>
+          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#475569",fontSize:12,margin:0}}>PEDULI · WARGATERRA</p>
         </div>
         <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setErr("");}}
           onKeyDown={e=>e.key==="Enter"&&attempt()} placeholder="Enter admin password"
@@ -1343,7 +1467,7 @@ function AdminPanel({ onExit, adminToken }) {
       <div style={{background:"linear-gradient(135deg,#0a1a35,#0f2d5c)",padding:"20px 16px 16px",borderBottom:"1px solid #1e3a5f"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
           <div>
-            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#475569",fontSize:10,margin:"0 0 3px",textTransform:"uppercase",letterSpacing:"0.08em"}}>PEDULI · WargaTerra Enterprise</p>
+            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#475569",fontSize:10,margin:"0 0 3px",textTransform:"uppercase",letterSpacing:"0.08em"}}>PEDULI · WARGATERRA</p>
             <h1 style={{fontFamily:"'Unbounded',sans-serif",color:"#fff",fontSize:20,margin:0,fontWeight:900}}>Admin Console</h1>
           </div>
           <div style={{display:"flex",gap:8}}>
