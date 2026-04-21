@@ -362,7 +362,7 @@ function HomePage({ navigate, user }) {
       icon:"🏢",
       title:"CSR Contributor",
       hook:"Turn giving into lasting impact",
-      desc:"Companies and individuals can contribute to the PEDULI liquidity pool on Uniswap. Every ringgit or dollar added directly increases the value of tokens earned through sweat and effort. Transparent, on-chain, and permanent.",
+      desc:"Companies and individuals can contribute to the PEDULI liquidity pool on Uniswap. Every contribution added directly increases the value of tokens earned through sweat and effort. Transparent, on-chain, and permanent.",
       cta:"Contribute to the Pool",
       color:"#b45309",
     },
@@ -1203,27 +1203,31 @@ function DisclaimerPage() {
   const [tab, setTab] = useState("why");
 
   const USE_CASES = [
-    {
-      emoji: "🔒",
-      title: "The Self-Challenger",
-      desc: "Add your own capital into the PEDULI liquidity pool on Uniswap. The only way to reclaim value is to earn it — rep by rep. The pressure is real: other users are exercising simultaneously and drawing from the same pool. Move first, or let someone else claim what could have been yours. PEDULI turns procrastination into a financial cost.",
-    },
-    {
-      emoji: "👨‍👩‍👧",
-      title: "Parents & Children",
-      desc: "Reward your children's physical activity with real digital tokens. The more they exercise, the more PEDULI they earn — straight into their crypto wallet. You decide what each token is worth as pocket money in your household. The blockchain records every rep honestly. When they're ready, they can exchange at market rate too.",
-    },
-    {
-      emoji: "🌍",
-      title: "Community Empowerment",
-      desc: "No capital required. No gatekeepers. If you have a smartphone and the willingness to move, PEDULI gives you a path to earn. Designed with underprivileged communities in mind — complete exercises, collect tokens, exchange them later on Uniswap or any DEX. Honest reward for honest effort.",
-    },
-    {
-      emoji: "🤝",
-      title: "CSR & Liquidity Providers",
-      desc: "Companies and individuals can contribute by adding capital to the PEDULI liquidity pool on Uniswap. The stronger the pool, the more meaningful each token reward becomes for every person who earns it through exercise. This is CSR with measurable human impact — every token earned represents a rep completed.",
-    },
-  ];
+  {
+    emoji: "🏆",
+    title: "Self-Challenger",
+    hook: "Put your money where your muscles are",
+    desc: "Add your own capital into the PEDULI liquidity pool on Uniswap. The only way to earn it back is to exercise. Others can earn from the same pool simultaneously — so the clock is always ticking. PEDULI turns the intention to exercise into a financial commitment you actually keep.",
+  },
+  {
+    emoji: "👨‍👩‍👧",
+    title: "Parent",
+    hook: "Pocket money they actually earn",
+    desc: "Reward your children with PEDULI tokens for completing exercises. You decide what each token is worth to your family. They build healthy habits, a sense of achievement, and their first taste of financial independence — one rep at a time. The blockchain records every session honestly.",
+  },
+  {
+    emoji: "🤝",
+    title: "Extra Income Seeker",
+    hook: "Your effort is your capital",
+    desc: "PEDULI does not ask for your background, your savings, or your circumstances. If you have a device and the willingness to move, you have everything you need. Complete exercises, collect tokens, and exchange them when you are ready on Uniswap or any DEX. Your effort is enough.",
+  },
+  {
+    emoji: "🏢",
+    title: "CSR Contributor",
+    hook: "Turn giving into lasting impact",
+    desc: "Companies and individuals can contribute by adding capital to the PEDULI liquidity pool on Uniswap. Every contribution directly increases the value of tokens earned through sweat and effort by real people. Transparent, on-chain, and permanent — this is CSR where every contribution is traceable to human impact.",
+  },
+];
 
   const DISCLAIMERS = [
     ["⚠️ Health & Physical Safety", "Participation in any exercise programme carries inherent physical risk. PEDULI exercises are for general wellness purposes only. Users must consult a qualified medical professional before beginning any exercise programme, particularly if they have pre-existing medical conditions, injuries, disabilities, or are pregnant. By using PEDULI, you confirm that you are physically capable of performing the selected exercises. WARGATERRA, its developers, and affiliates accept no liability whatsoever for any injury, accident, health complication, or physical harm arising from use of this application."],
@@ -1291,24 +1295,31 @@ function DisclaimerPage() {
         {tab === "why" && (
           <>
             <Card style={{ marginBottom: 14, background: T.primaryBg, border: `1.5px solid ${T.primaryBrd}` }}>
-              <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 10, color: T.primary, margin: "0 0 10px", letterSpacing: "0.06em" }}>OUR MISSION</p>
-              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, color: "#0f172a", margin: 0, lineHeight: 1.8, fontWeight: 500 }}>
-                PEDULI exists to make physical activity genuinely rewarding — not just for health, but financially. We built a system where every rep earns a real digital token, backed by real liquidity. Whether you are a parent motivating your children, an individual challenging yourself, or a company directing CSR funds toward community wellness — PEDULI turns movement into value.
-              </p>
-            </Card>
+  <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 10, color: T.primary, margin: "0 0 10px", letterSpacing: "0.06em" }}>OUR MISSION</p>
+  <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, color: "#0f172a", margin: 0, lineHeight: 1.8, fontWeight: 500 }}>
+    PEDULI does not ask who you are or why you are here. It just rewards you for moving. Whether you are a parent building healthy habits with your children, someone looking for an honest extra income stream, an individual who wants financial skin in the game, or a company that wants CSR spending to have real and traceable impact — PEDULI turns movement into value, one rep at a time.
+  </p>
+</Card>
 
             <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 10, color: "#64748b", margin: "0 0 10px 2px", letterSpacing: "0.06em" }}>WHO IS THIS FOR</p>
-            {USE_CASES.map(({ emoji, title, desc }) => (
-              <Card key={title} style={{ marginBottom: 12 }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                  <span style={{ fontSize: 26, flexShrink: 0 }}>{emoji}</span>
-                  <div>
-                    <h3 style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 11, color: "#0f172a", margin: "0 0 6px", fontWeight: 900 }}>{title}</h3>
-                    <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#475569", margin: 0, lineHeight: 1.75 }}>{desc}</p>
-                  </div>
-                </div>
-              </Card>
-            ))}
+            {USE_CASES.map(({ emoji, title, hook, desc }) => (
+  <Card key={title} style={{ marginBottom: 12 }}>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+      <span style={{ fontSize: 26, flexShrink: 0 }}>{emoji}</span>
+      <div>
+        <h3 style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 11, color: "#0f172a", margin: "0 0 4px", fontWeight: 900 }}>
+          {title}
+        </h3>
+        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: T.primary, margin: "0 0 6px", fontWeight: 700, fontStyle: "italic" }}>
+          {hook}
+        </p>
+        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#475569", margin: 0, lineHeight: 1.75 }}>
+          {desc}
+        </p>
+      </div>
+    </div>
+  </Card>
+))}
 
             <Card style={{ background: "#f8fafc", textAlign: "center" }}>
               <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#94a3b8", margin: 0, lineHeight: 1.7 }}>
