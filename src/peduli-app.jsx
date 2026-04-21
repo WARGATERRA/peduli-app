@@ -682,7 +682,7 @@ function DashboardPage({ user, navigate }) {
    PROFILE PAGE
 ──────────────────────────────────────────────── */
 function ProfilePage({ user, saveUser, navigate, startMode }) {
-  const [mode,setMode] = useState(startMode || (user?"edit":"register"));
+  const [mode,setMode] = useState(startMode || (user?"edit":"login"));
   const [form,setForm]             = useState({name:user?.name||"",email:user?.email||"",wallet:user?.wallet||""});
   const [regPin,setRegPin]         = useState("");
   const [regConfirm,setRegConfirm] = useState("");
