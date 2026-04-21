@@ -396,13 +396,13 @@ function HomePage({ navigate, user }) {
           <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#94a3b8",margin:"0 0 12px",lineHeight:1.6}}>
             Add PEDULI liquidity on Uniswap to grow the ecosystem. Pair PEDULI with MATIC and earn trading fees while supporting the community.
           </p>
-          <a href="https://app.uniswap.org/add/ETH/0xaE9aBF1090EB04E1b6E83851013C3d8f1189D8C9?chain=polygon"
+          <a href="https://app.uniswap.org/explore/tokens/polygon/0xae9abf1090eb04e1b6e83851013c3d8f1189d8c9"
             target="_blank" rel="noopener noreferrer"
             style={{display:"block",width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:12,padding:"14px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer",textAlign:"center",textDecoration:"none",boxSizing:"border-box"}}>
             💧 ADD LIQUIDITY ON UNISWAP →
           </a>
           <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,color:"#475569",margin:"8px 0 0",textAlign:"center"}}>
-            You will need PEDULI tokens and MATIC in your wallet. Opens Uniswap in your browser.
+            Opens the PEDULI token page on Uniswap. Connect your wallet there to add liquidity or swap.
           </p>
         </Card>
       </div>
