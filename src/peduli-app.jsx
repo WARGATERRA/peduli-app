@@ -1264,7 +1264,7 @@ function DisclaimerPage() {
     rel="noopener noreferrer"
     style={{ display: "inline-block", fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: T.glow, fontWeight: 600, textDecoration: "none" }}
   >
-    🔍 Verify on PolygonScan ↗
+    🔍 Verify on PolygonScan →
   </a>
 </Card>
 
