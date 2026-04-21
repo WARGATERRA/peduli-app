@@ -1132,10 +1132,32 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
             </Card>
             <Card style={{marginTop:12}}>
               <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,color:T.primary,margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.06em"}}>🔗 Polygon Wallet Address</p>
-              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#64748b",margin:"0 0 12px"}}>Required to receive PEDULI tokens on Polygon network</p>
+              <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#64748b",margin:"0 0 12px"}}>Required — this is where your earned PEDULI tokens will be sent after each exercise.</p>
               <WalletInput value={form.wallet} onChange={v=>{setForm({...form,wallet:v});clr();}} inputStyle={inp}/>
-              <div style={{background:T.accentBg,border:`1px solid ${T.accentBrd}`,borderRadius:10,padding:"10px 12px",marginTop:8}}>
-                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:T.accentDk,margin:0}}>💡 Use MetaMask or Trust Wallet on Polygon network.</p>
+              <div style={{background:T.accentBg,border:`1px solid ${T.accentBrd}`,borderRadius:10,padding:"12px",marginTop:8}}>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:T.accentDk,fontWeight:700,margin:"0 0 6px"}}>🆕 Don't have a wallet yet? It's free.</p>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#92400e",margin:"0 0 10px",lineHeight:1.6}}>
+                  A crypto wallet is a free app that stores your PEDULI tokens. Download one of these, then copy your wallet address into the field above.
+                </p>
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
+                  {[
+                    {name:"MetaMask",desc:"Most popular · Works on browser & mobile",url:"https://metamask.io/download/",icon:"🦊"},
+                    {name:"Trust Wallet",desc:"Mobile friendly · Great for beginners",url:"https://trustwallet.com/download",icon:"🛡️"},
+                  ].map(w=>(
+                    <a key={w.name} href={w.url} target="_blank" rel="noopener noreferrer"
+                      style={{display:"flex",alignItems:"center",gap:10,background:"#fff",border:`1px solid ${T.accentBrd}`,borderRadius:8,padding:"10px 12px",textDecoration:"none"}}>
+                      <span style={{fontSize:20}}>{w.icon}</span>
+                      <div style={{flex:1}}>
+                        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,color:"#0f172a",margin:0}}>{w.name}</p>
+                        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,color:"#64748b",margin:0}}>{w.desc}</p>
+                      </div>
+                      <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:T.primary,fontWeight:600}}>Download →</span>
+                    </a>
+                  ))}
+                </div>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,color:"#92400e",margin:0,lineHeight:1.6}}>
+                  ⚙️ After installing, switch the network to <strong>Polygon</strong> · Then copy your address starting with <strong>0x</strong> into the field above.
+                </p>
               </div>
             </Card>
             <Card style={{marginTop:12}}>
