@@ -319,7 +319,7 @@ function Card({ children, style={} }) {
 /* ──────────────────────────────────────────────
    HOME PAGE
 ──────────────────────────────────────────────── */
-function HomePage({ navigate, user }) {
+function HomePage({ navigate, user, setProfileMode }) {
   const total=user?.totalTokens||0;
   const tapRef=useRef(0),tapTimer=useRef(null);
   const [activeUseCase,setActiveUseCase]=useState(null);
@@ -389,7 +389,7 @@ function HomePage({ navigate, user }) {
           </div>
         ):(
           <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-            <button onClick={()=>navigate("profile")}
+            <button onClick={()=>{setProfileMode("register");navigate("profile");}}
               style={{background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:12,padding:"12px 24px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>
               JOIN FREE →
             </button>
@@ -1827,7 +1827,7 @@ export default function App() {
         ::-webkit-scrollbar-thumb{background:${T.glow};border-radius:4px;}
       `}</style>
       <div style={{maxWidth:500,margin:"0 auto",position:"relative"}}>
-        {page==="home"            &&<HomePage navigate={navigate} user={user}/>}
+        {page==="home"            &&<HomePage navigate={navigate} user={user} setProfileMode={setProfileMode}/>}
         {page==="exercise-select" &&<ExerciseSelectPage navigate={navigate} user={user} getDailyRemaining={getDailyRemaining}/>}
         {page==="exercise"        &&<ExercisePage exercise={exercise} targetReps={targetReps} user={user} setUser={setUser} navigate={navigate} addTokens={addTokens} getDailyRemaining={getDailyRemaining}/>}
         {page==="dashboard"       &&<DashboardPage user={user} navigate={navigate}/>}
