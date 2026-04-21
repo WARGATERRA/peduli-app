@@ -1159,14 +1159,14 @@ function DisclaimerPage() {
     <div style={{ minHeight: "100vh", background: T.surface, display: "flex", flexDirection: "column", paddingBottom: 80 }}>
 
       {/* Sticky Header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "linear-gradient(135deg,#0c1e3d,#14447a)", padding: "20px 20px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-          <span style={{ fontSize: 24 }}>🤝</span>
-          <div>
-            <h1 style={{ fontFamily: "'Unbounded',sans-serif", color: "#fff", fontSize: 18, margin: 0, fontWeight: 900 }}>About PEDULI</h1>
-            <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: T.glow, fontSize: 11, margin: 0 }}>A CSR initiative by Wargaterra · Built on Polygon</p>
-          </div>
-        </div>
+<div style={{ position: "sticky", top: 0, zIndex: 50, background: "linear-gradient(135deg,#0c1e3d,#14447a)", padding: "20px 20px 0" }}>
+  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+    <img src="/logo.svg" alt="PEDULI" style={{ width: 40, height: 40, objectFit: "contain" }} />
+    <div>
+      <h1 style={{ fontFamily: "'Unbounded',sans-serif", color: "#fff", fontSize: 18, margin: 0, fontWeight: 900 }}>About PEDULI</h1>
+      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: T.glow, fontSize: 11, margin: 0 }}>A CSR initiative by Wargaterra · Built on Polygon</p>
+    </div>
+  </div>
 
         {/* Tab Bar */}
         <div style={{ display: "flex", gap: 6, paddingBottom: 0 }}>
