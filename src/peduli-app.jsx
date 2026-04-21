@@ -454,7 +454,8 @@ function ExercisePage({ exercise, targetReps, user, setUser, navigate, addTokens
   const triggerReward=async(exerciseId,repCount)=>{
     // Stop cameras immediately — prevents onResults firing after navigate
     cameraRef.current?.stop?.();
-    poseRef.current?.close?.();
+    cameraRef.current = null;
+    if(poseRef.current){ try{ poseRef.current.close(); }catch(e){} poseRef.current=null; }
     const result=addTokens(exerciseId,repCount);
     const earned=result?.tokens??repCount;
     if(!mountedRef.current)return;
@@ -492,8 +493,10 @@ function ExercisePage({ exercise, targetReps, user, setUser, navigate, addTokens
     ]).then(()=>setPoseReady(true)).catch(()=>{setCameraError(true);});
     return()=>{
       mountedRef.current=false;
-      cameraRef.current?.stop?.();poseRef.current?.close?.();
-      checkCameraRef.current?.stop?.();checkPoseRef.current?.close?.();
+      cameraRef.current?.stop?.(); cameraRef.current=null;
+      if(poseRef.current){ try{ poseRef.current.close(); }catch(e){} poseRef.current=null; }
+      checkCameraRef.current?.stop?.(); checkCameraRef.current=null;
+      if(checkPoseRef.current){ try{ checkPoseRef.current.close(); }catch(e){} checkPoseRef.current=null; }
     };
   },[]);
 
