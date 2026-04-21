@@ -431,7 +431,7 @@ function ExerciseSelectPage({ navigate, user, getDailyRemaining }) {
 /* ──────────────────────────────────────────────
    EXERCISE PAGE
 ──────────────────────────────────────────────── */
-function ExercisePage({ exercise, targetReps, user, navigate, addTokens, getDailyRemaining }) {
+function ExercisePage({ exercise, targetReps, user, setUser, navigate, addTokens, getDailyRemaining }) {
   const videoRef=useRef(null),canvasRef=useRef(null);
   const checkVideoRef=useRef(null),checkCanvasRef=useRef(null);
   const detectorRef=useRef(new RepDetector(exercise.id));
@@ -1507,7 +1507,7 @@ export default function App() {
       <div style={{maxWidth:500,margin:"0 auto",position:"relative"}}>
         {page==="home"            &&<HomePage navigate={navigate} user={user}/>}
         {page==="exercise-select" &&<ExerciseSelectPage navigate={navigate} user={user} getDailyRemaining={getDailyRemaining}/>}
-        {page==="exercise"        &&<ExercisePage exercise={exercise} targetReps={targetReps} user={user} navigate={navigate} addTokens={addTokens} getDailyRemaining={getDailyRemaining}/>}
+        {page==="exercise"        &&<ExercisePage exercise={exercise} targetReps={targetReps} user={user} setUser={setUser} navigate={navigate} addTokens={addTokens} getDailyRemaining={getDailyRemaining}/>}
         {page==="dashboard"       &&<DashboardPage user={user} navigate={navigate}/>}
         {page==="profile" &&<ProfilePage user={user} saveUser={saveUser} navigate={navigate} startMode={profileMode}/>}
         {page==="disclaimer"      &&<DisclaimerPage/>}
