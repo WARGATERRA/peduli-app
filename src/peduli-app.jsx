@@ -40,6 +40,7 @@ const TOKEN       = "PEDULI";
 
 // ── Railway backend URL ───────────────────────────────────────────────────────
 const REWARD_API_URL = "https://peduli-backend-production.up.railway.app";
+const PEDULI_CONTRACT = "0xaE9aBF1090EB04E1b6E83851013C3d8f1189D8C9";
 
 /* ──────────────────────────────────────────────
    ★ DATABASE API HELPERS ★
@@ -1165,7 +1166,7 @@ function DisclaimerPage() {
     ],
     [
       "📋 Data & Privacy",
-      "User data including name, email, and wallet address is stored securely in a private database. WARGATERRA does not sell, rent, or share personal data with third parties. Wallet addresses recorded on the Polygon blockchain are public by nature of the technology.",
+      "User data including name, email, and wallet address is stored securely in a private database. Wargaterra does not sell, rent, or share personal data with third parties. Wallet addresses recorded on the Polygon blockchain are public by nature of the technology. Camera and movement data captured during exercise sessions is processed entirely on-device via MediaPipe and is never transmitted to or stored by Wargaterra's servers.",
     ],
     [
       "⚖️ Regulatory Compliance",
@@ -1240,6 +1241,45 @@ function DisclaimerPage() {
             </div>
           ))}
         </Card>
+
+         {/* Official Contract Address */}
+<Card style={{ marginBottom: 16, background: "#0f172a", border: "1.5px solid #1e3a5f" }}>
+  <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 11, color: T.glow, margin: "0 0 10px", letterSpacing: "0.06em" }}>
+    ✅ OFFICIAL TOKEN CONTRACT
+  </p>
+  <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#94a3b8", margin: "0 0 10px", lineHeight: 1.6 }}>
+    Always verify you are interacting with the correct PEDULI token on Polygon. Wargaterra will never ask you to approve any other contract address. If someone sends you a different address, it is a scam.
+  </p>
+  <div style={{ background: "#1e2d40", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+    <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 10, color: "#64748b", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+      Network: Polygon (MATIC)
+    </p>
+    <p style={{ fontFamily: "monospace", fontSize: 12, color: "#60a5fa", margin: 0, wordBreak: "break-all", lineHeight: 1.6 }}>
+      {PEDULI_CONTRACT}
+    </p>
+  </div>
+  
+    href={`https://polygonscan.com/token/${PEDULI_CONTRACT}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{ display: "inline-block", fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: T.glow, fontWeight: 600, textDecoration: "none" }}
+  >
+    🔍 Verify on PolygonScan ↗
+  </a>
+</Card>
+
+{/* Camera & Privacy */}
+<Card style={{ marginBottom: 16, background: "#f0fdf4", border: "1.5px solid #bbf7d0" }}>
+  <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 11, color: "#166534", margin: "0 0 10px", letterSpacing: "0.06em" }}>
+    📷 YOUR CAMERA — WHAT WE SEE & DON'T STORE
+  </p>
+  <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#166534", margin: "0 0 8px", lineHeight: 1.75, fontWeight: 600 }}>
+    All movement analysis happens entirely on your own device. No video, no images, and no camera data ever leaves your phone or computer.
+  </p>
+  <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#15803d", margin: 0, lineHeight: 1.75 }}>
+    PEDULI uses MediaPipe — an open-source AI library by Google — to detect body landmarks in real time directly in your browser. The camera feed is processed locally, frame by frame, and immediately discarded. Wargaterra's servers receive only the final rep count. We have no ability to view, record, or retrieve your camera footage at any point.
+  </p>
+</Card>
 
         {/* Disclaimers */}
         <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 11, color: "#64748b", margin: "0 0 10px 2px", letterSpacing: "0.06em" }}>
