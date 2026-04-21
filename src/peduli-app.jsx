@@ -448,17 +448,22 @@ function ExercisePage({ exercise, targetReps, user, setUser, navigate, addTokens
   const [phase,setPhase]=useState("check"); // "check" | "exercise"
   const [bodyDetected,setBodyDetected]=useState(false);
   const [checkReady,setCheckReady]=useState(false);
-  const countRef=useRef(0),completedRef=useRef(false);
+  const countRef=useRef(0),completedRef=useRef(false),mountedRef=useRef(true);
   const effectiveTarget=Math.min(targetReps,getDailyRemaining(exercise.id));
 
   const triggerReward=async(exerciseId,repCount)=>{
+    // Stop cameras immediately — prevents onResults firing after navigate
+    cameraRef.current?.stop?.();
+    poseRef.current?.close?.();
     const result=addTokens(exerciseId,repCount);
     const earned=result?.tokens??repCount;
+    if(!mountedRef.current)return;
     setTokensEarned(earned);setCompleted(true);
     if(!user?.wallet){setTxStatus("no-wallet");return;}
     if(earned<=0)return;
     setTxStatus("pending");
     const txResult=await sendBlockchainReward(user.wallet,earned,exerciseId,user.email);
+    if(!mountedRef.current)return; // user navigated away — don't update state
     if(txResult.success){
       setTxStatus("success");
       setTxHash(txResult.txHash);
@@ -486,6 +491,7 @@ function ExercisePage({ exercise, targetReps, user, setUser, navigate, addTokens
       loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"),
     ]).then(()=>setPoseReady(true)).catch(()=>{setCameraError(true);});
     return()=>{
+      mountedRef.current=false;
       cameraRef.current?.stop?.();poseRef.current?.close?.();
       checkCameraRef.current?.stop?.();checkPoseRef.current?.close?.();
     };
@@ -534,7 +540,7 @@ function ExercisePage({ exercise, targetReps, user, setUser, navigate, addTokens
         ctx.save();ctx.clearRect(0,0,canvas.width,canvas.height);
         ctx.scale(-1,1);ctx.translate(-canvas.width,0);
         if(results.image)ctx.drawImage(results.image,0,0,canvas.width,canvas.height);
-        if(results.poseLandmarks){
+        if(results.poseLandmarks&&mountedRef.current){
           window.drawConnectors?.(ctx,results.poseLandmarks,window.POSE_CONNECTIONS,{color:"rgba(41,128,212,0.65)",lineWidth:2});
           window.drawLandmarks?.(ctx,results.poseLandmarks,{color:"#60a5fa",lineWidth:1,radius:3});
           if(!completedRef.current){
