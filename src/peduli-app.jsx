@@ -379,6 +379,7 @@ function HomePage({ navigate, user }) {
 function ExerciseSelectPage({ navigate, user, getDailyRemaining }) {
   const [selected,setSelected]=useState(null);
   const [target,setTarget]=useState(20);
+  const MIN_REPS = 5;
   const remaining=selected?getDailyRemaining(selected.id):0;
   const maxTarget=Math.min(remaining,100);
   return(
@@ -392,7 +393,7 @@ function ExerciseSelectPage({ navigate, user, getDailyRemaining }) {
           {EXERCISES.map(ex=>{
             const rem=getDailyRemaining(ex.id),sel=selected?.id===ex.id;
             return(
-              <button key={ex.id} onClick={()=>{setSelected(ex);setTarget(Math.min(20,rem));}}
+              <button key={ex.id} onClick={()=>{setSelected(ex);setTarget(Math.max(MIN_REPS,Math.min(20,rem)));}}
                 style={{background:sel?ex.color:"#fff",border:sel?`2px solid ${ex.color}`:`2px solid ${T.primaryPale}`,borderRadius:16,padding:"16px 12px",cursor:rem===0?"not-allowed":"pointer",opacity:rem===0?0.4:1,textAlign:"center",transition:"all 0.2s",boxShadow:sel?`0 4px 16px ${ex.color}40`:"none"}}>
                 <div style={{fontSize:30,marginBottom:6}}>{ex.emoji}</div>
                 <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,color:sel?"#fff":"#1e293b",margin:"0 0 4px"}}>{ex.name}</p>
@@ -406,9 +407,9 @@ function ExerciseSelectPage({ navigate, user, getDailyRemaining }) {
             <h3 style={{fontFamily:"'Unbounded',sans-serif",fontSize:14,color:"#0f172a",margin:"0 0 4px"}}>{selected.emoji} {selected.name}</h3>
             <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:"#64748b",margin:"0 0 16px"}}>{selected.description}</p>
             <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:13,color:T.primary,margin:"0 0 8px"}}>Target Reps: <span style={{fontSize:28,color:"#0f172a",fontFamily:"'Unbounded',sans-serif"}}>{target}</span></p>
-            <input type="range" min={1} max={maxTarget||1} value={target} onChange={e=>setTarget(+e.target.value)} style={{width:"100%",accentColor:T.primary,marginBottom:12}}/>
+            <input type="range" min={MIN_REPS} max={maxTarget||MIN_REPS} value={target} onChange={e=>setTarget(+e.target.value)} style={{width:"100%",accentColor:T.primary,marginBottom:12}}/>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}>
-              <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#94a3b8"}}>1 rep</span>
+              <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#94a3b8"}}>5 reps</span>
               <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#94a3b8"}}>{maxTarget} reps</span>
             </div>
             <div style={{background:T.primaryBg,borderRadius:10,padding:"10px 14px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
