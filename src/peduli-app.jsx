@@ -145,12 +145,12 @@ async function apiChangePin(email, newPin, currentPin) {
 
 
 // Update existing user profile (name + wallet only)
-async function apiUpdateProfile(email, name, wallet) {
+async function apiUpdateProfile(email, name, wallet, pin) {
   try {
     const res = await fetch(`${REWARD_API_URL}/api/users/profile`, {
       method:  "PUT",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ email, name, wallet }),
+      body:    JSON.stringify({ email, name, wallet, pin }),
     });
     return await res.json();
   } catch { return { error: "Could not reach server." }; }
@@ -884,13 +884,14 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
 
   const handleSave = async () => {
     if(!form.name.trim())return setError("Please enter your name.");
+    if(!/^\d{4}$/.test(currentPin))return setError("Please enter your 4-digit PIN to save changes.");
     if(form.wallet){const ws=walletStatus(form.wallet);if(ws!=="valid"){const hex=form.wallet.slice(2);
       if(ws==="noprefix") return setError("Wallet must start with 0x.");
       if(ws==="short")    return setError(`Too short — ${hex.length}/40 hex characters.`);
       if(ws==="long")     return setError("Too long — must be exactly 42 characters.");
       if(ws==="badchars") return setError("Invalid characters — only 0–9 and a–f after 0x.");}}
     clr();setBusy(true);
-    const result = await apiUpdateProfile(user.email, form.name, form.wallet);
+    const result = await apiUpdateProfile(user.email, form.name, form.wallet, currentPin);
     setBusy(false);
     if(!result||result.error) return setError(result?.error||"Could not save. Please try again.");
     await saveUser({...user,...form});
@@ -1042,8 +1043,10 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
             </Card>
             <Card style={{marginTop:12}}>
               <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,color:T.primary,margin:"0 0 8px",textTransform:"uppercase",letterSpacing:"0.06em"}}>🔐 Security</p>
-              <button onClick={()=>{clr();setCpEmail(user.email);setNewPin("");setConfirmPin("");setMode("change-pin");}}
-                style={{width:"100%",background:T.primaryBg,border:`1.5px solid ${T.primaryPale}`,borderRadius:10,padding:"12px 14px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:600,fontSize:13,color:T.primary,cursor:"pointer",textAlign:"left"}}>
+              <label style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#64748b",display:"block",marginBottom:4}}>Enter your PIN to save changes</label>
+              <input style={pinInp} type="password" inputMode="numeric" maxLength={4} value={currentPin} onChange={e=>{setCurrentPin(e.target.value.replace(/\D/g,""));clr();}} placeholder="••••"/>
+              <button onClick={()=>{clr();setCpEmail(user.email);setCurrentPin("");setNewPin("");setConfirmPin("");setMode("change-pin");}}
+                style={{width:"100%",background:T.primaryBg,border:`1.5px solid ${T.primaryPale}`,borderRadius:10,padding:"12px 14px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:600,fontSize:13,color:T.primary,cursor:"pointer",textAlign:"left",marginTop:8}}>
                 🔑 Change PIN →
               </button>
             </Card>
