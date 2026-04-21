@@ -33,6 +33,8 @@ const EXERCISES = [
   { id: "jumping-jacks",     name: "Jumping Jacks",    emoji: "⭐", color: "#7c3aed", description: "Jump with arms & legs spread wide" },
   { id: "overhead-press",    name: "Overhead Press",   emoji: "💪", color: "#b45309", description: "Push both arms straight overhead" },
   { id: "arm-circles",       name: "Arm Circles",      emoji: "🔄", color: "#6d3fa0", description: "Swing arms in full big circles" },
+  { id: "side-lunges",       name: "Side Lunges",      emoji: "🦵", color: "#0f766e", description: "Step wide to each side, bend that knee" },
+  { id: "side-bend",         name: "Side Bend Stretch",emoji: "🙆", color: "#be185d", description: "Slide one hand down your leg, alternate sides" },
 ];
 
 const DAILY_LIMIT = 100;
@@ -237,9 +239,10 @@ class RepDetector {
   process(lm) {
     if (!lm||lm.length<33) return {count:this.count,feedback:this.feedback};
     ({squats:()=>this._squat(lm),"jumping-jacks":()=>this._jj(lm),"standing-march":()=>this._march(lm),
-      "overhead-press":()=>this._ohp(lm),"side-leg-raises":()=>this._sideLeg(lm),
-      "calf-raises":()=>this._calf(lm),"arm-circles":()=>this._armCircle(lm),
-      "bicycle-crunches":()=>this._bicycle(lm)})[this.id]?.();
+  "overhead-press":()=>this._ohp(lm),"side-leg-raises":()=>this._sideLeg(lm),
+  "calf-raises":()=>this._calf(lm),"arm-circles":()=>this._armCircle(lm),
+  "bicycle-crunches":()=>this._bicycle(lm),
+  "side-lunges":()=>this._sideLunge(lm),"side-bend":()=>this._sideBend(lm)})[this.id]?.();
     return {count:this.count,feedback:this.feedback};
   }
   _squat(lm){const a=calcAngle(lm[23],lm[25],lm[27]);if(a>160&&this.state==="down"){this.count++;this.state="up";this.feedback=`✅ ${this.count} reps! Squat again`;}else if(a<90){this.state="down";this.feedback="⬆️ Now stand back up!";}else if(a>160){this.state="up";this.feedback="⬇️ Bend knees to squat down";}else this.feedback=a>130?"⬇️ Go lower...":"⬆️ Almost there...";}
@@ -249,6 +252,25 @@ class RepDetector {
   _sideLeg(lm){const lR=lm[23].x-lm[27].x>0.14,rR=lm[28].x-lm[24].x>0.14;if((lR||rR)&&this.state!=="up"){this.state="up";this.feedback="⬇️ Lower your leg";}else if(!lR&&!rR&&this.state==="up"){this.count++;this.state="down";this.feedback=`✅ ${this.count} reps! Raise again!`;}else if(this.state!=="up")this.feedback="🦵 Raise one leg to the side!";}
   _calf(lm){if(!this.x.base)this.x={base:(lm[23].y+lm[24].y)/2,hist:[]};const y=(lm[23].y+lm[24].y)/2;this.x.hist.push(y);if(this.x.hist.length>8)this.x.hist.shift();const s=this.x.hist.reduce((a,b)=>a+b)/this.x.hist.length,rise=this.x.base-s;if(rise>0.018&&this.state!=="up"){this.state="up";this.feedback="⬇️ Lower heels down";}else if(rise<0.004&&this.state==="up"){this.count++;this.state="down";this.feedback=`✅ ${this.count} reps! Rise again!`;this.x.base=s;}else if(this.state!=="up")this.feedback="🦶 Rise on your tiptoes!";}
   _armCircle(lm){const a=Math.atan2(lm[15].y-lm[11].y,lm[15].x-lm[11].x)*180/Math.PI;if(this.x.la!==undefined){let d=a-this.x.la;if(d>180)d-=360;if(d<-180)d+=360;this.x.tot=(this.x.tot||0)+d;if(Math.abs(this.x.tot)>=360){this.count++;this.x.tot=0;this.feedback=`✅ ${this.count} circles! Keep going!`;}else this.feedback=`🔄 ${Math.round(Math.abs(this.x.tot)/360*100)}% circle...`;}else{this.x={la:a,tot:0};this.feedback="🔄 Make big full arm circles!";}this.x.la=a;}
+   _sideLunge(lm){
+  const spread=Math.abs(lm[27].x-lm[28].x);
+  const leftKnee=calcAngle(lm[23],lm[25],lm[27]);
+  const rightKnee=calcAngle(lm[24],lm[26],lm[28]);
+  const bent=Math.min(leftKnee,rightKnee);
+  const isDown=spread>0.28&&bent<125;
+  const isCenter=spread<0.12;
+  if(isDown&&this.state!=="down"){this.state="down";this.feedback="⬆️ Push back to center!";}
+  else if(isCenter&&this.state==="down"){this.count++;this.state="up";this.feedback=`✅ ${this.count} reps! Lunge to the other side!`;}
+  else if(this.state!=="down")this.feedback="🦵 Step wide to one side and bend that knee!";}
+_sideBend(lm){
+  if(!this.x.l)this.x={l:false,r:false};
+  const leftBend=lm[15].y>lm[25].y+0.04;
+  const rightBend=lm[16].y>lm[26].y+0.04;
+  if(leftBend&&!this.x.l){this.x.l=true;this.count++;this.feedback=`✅ ${this.count} reps! Now bend to the right!`;}
+  if(!leftBend)this.x.l=false;
+  if(rightBend&&!this.x.r){this.x.r=true;this.count++;this.feedback=`✅ ${this.count} reps! Now bend to the left!`;}
+  if(!rightBend)this.x.r=false;
+  if(!leftBend&&!rightBend)this.feedback="🙆 Slide one hand slowly down your leg to the side!";}
   _bicycle(lm){if(!this.x.l)this.x={l:false,r:false};const lc=dist2D(lm[13],lm[26])<0.22,rc=dist2D(lm[14],lm[25])<0.22;if(lc&&!this.x.l){this.x.l=true;this.count++;this.feedback=`✅ ${this.count} reps! Other side!`;}if(!lc)this.x.l=false;if(rc&&!this.x.r){this.x.r=true;this.count++;this.feedback=`✅ ${this.count} reps! Other side!`;}if(!rc)this.x.r=false;if(!lc&&!rc)this.feedback="🚴 Bring elbow to opposite knee!";}
 }
 
