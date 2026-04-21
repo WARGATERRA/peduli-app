@@ -332,7 +332,7 @@ function HomePage({ navigate, user }) {
       <div style={{padding:"40px 24px 28px",textAlign:"center"}}>
         <img src="/logo.svg" alt="PEDULI" style={{width:90,height:90,marginBottom:8,objectFit:"contain"}}/>
         <h1 onClick={handleTitleTap} style={{fontFamily:"'Unbounded',sans-serif",fontWeight:900,fontSize:32,color:"#fff",margin:"0 0 6px",letterSpacing:"-1px",lineHeight:1.1,cursor:"default",userSelect:"none"}}>PEDULI</h1>
-        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:14,margin:"0 0 20px",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase"}}>Exercise · Earn · Empower</p>
+        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:14,margin:"0 0 20px",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase"}}>Move · Earn · Empower</p>
         {user?(
           <div style={{background:"rgba(255,255,255,0.08)",borderRadius:16,padding:"14px 20px",display:"inline-block",backdropFilter:"blur(8px)"}}>
             <p style={{color:T.glowSoft,fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,margin:"0 0 4px"}}>Welcome back, {user.name?.split(" ")[0]}! 👋</p>
@@ -340,7 +340,7 @@ function HomePage({ navigate, user }) {
           </div>
         ):(
           <div style={{background:"rgba(255,255,255,0.08)",borderRadius:16,padding:"14px 20px",backdropFilter:"blur(8px)"}}>
-            <p style={{color:T.glowSoft,fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,margin:0}}>🎁 Every rep earns you <strong>1 PEDULI token</strong>.<br/>Register to save your rewards!</p>
+            <p style={{color:T.glowSoft,fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,margin:0,lineHeight:1.7}}>🎁 Every rep earns <strong>1 PEDULI token</strong>.<br/>Self-challenger, parent, or community member —<br/>register to save your rewards!</p>
           </div>
         )}
       </div>
@@ -361,12 +361,49 @@ function HomePage({ navigate, user }) {
       <div style={{padding:"16px 16px 0"}}>
         <Card style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.10)",backdropFilter:"blur(8px)"}}>
           <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:12,margin:"0 0 10px",fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase"}}>How It Works</p>
-          {[["💪 Exercise","Pick any exercise & complete reps"],["🪙 Earn Tokens","1 rep = 1 PEDULI token (max 100/exercise/day)"],["💸 Convert to Cash","Token value grows via Uniswap liquidity pools"]].map(([t,d])=>(
+          {[["💪 Move Your Body","Pick any exercise, complete reps with your camera as witness"],["🪙 Earn PEDULI","1 rep = 1 PEDULI token, up to 100 per exercise per day"],["💸 Your Tokens, Your Value","Hold, exchange on Uniswap, or redeem however you define it"]].map(([t,d])=>(
             <div key={t} style={{marginBottom:10}}>
               <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:13,color:"#fff",margin:"0 0 2px"}}>{t}</p>
               <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#94a3b8",margin:0}}>{d}</p>
             </div>
           ))}
+        </Card>
+      </div>
+
+      <div style={{padding:"16px 16px 0"}}>
+        <Card style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.10)",backdropFilter:"blur(8px)"}}>
+          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:12,margin:"0 0 12px",fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase"}}>Who Is PEDULI For?</p>
+          {[
+            ["🏆","The Self-Challenger","Put your own capital into the PEDULI liquidity pool. The only way to get it back is to earn it through exercise. Time pressure included — others can earn from the same pool too."],
+            ["👨‍👩‍👧","Parents & Children","Reward your kids with PEDULI tokens as pocket money for exercise. You define what each token is worth to your family — they build healthy habits and crypto literacy at the same time."],
+            ["🤝","Underprivileged Communities","No capital needed. Just a device, internet, and the will to move. Earn PEDULI anytime, exchange it later at market rate on any DEX or CEX."],
+            ["🏢","CSR & Corporate Giving","Companies and individuals can contribute to the PEDULI liquidity pool on Uniswap. The deeper the pool, the more token holders benefit — a direct link between giving and impact."],
+          ].map(([icon,title,desc])=>(
+            <div key={title} style={{display:"flex",gap:12,marginBottom:14,alignItems:"flex-start"}}>
+              <div style={{fontSize:24,flexShrink:0,marginTop:2}}>{icon}</div>
+              <div>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:13,color:"#fff",margin:"0 0 3px"}}>{title}</p>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#94a3b8",margin:0,lineHeight:1.6}}>{desc}</p>
+              </div>
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      <div style={{padding:"16px 16px 0"}}>
+        <Card style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.10)",backdropFilter:"blur(8px)"}}>
+          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:12,margin:"0 0 8px",fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase"}}>💧 Support the Liquidity Pool</p>
+          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#94a3b8",margin:"0 0 12px",lineHeight:1.6}}>
+            Add PEDULI liquidity on Uniswap to grow the ecosystem. Pair PEDULI with MATIC and earn trading fees while supporting the community.
+          </p>
+          <a href="https://app.uniswap.org/add/ETH/0xaE9aBF1090EB04E1b6E83851013C3d8f1189D8C9?chain=polygon"
+            target="_blank" rel="noopener noreferrer"
+            style={{display:"block",width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:12,padding:"14px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer",textAlign:"center",textDecoration:"none",boxSizing:"border-box"}}>
+            💧 ADD LIQUIDITY ON UNISWAP →
+          </a>
+          <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,color:"#475569",margin:"8px 0 0",textAlign:"center"}}>
+            You will need PEDULI tokens and MATIC in your wallet. Opens Uniswap in your browser.
+          </p>
         </Card>
       </div>
     </div>
@@ -386,7 +423,7 @@ function ExerciseSelectPage({ navigate, user, getDailyRemaining }) {
     <div style={{minHeight:"100vh",background:T.surface,paddingBottom:80}}>
       <div style={{background:`linear-gradient(135deg,${T.primary},${T.primaryDk})`,padding:"28px 20px 20px"}}>
         <h1 style={{fontFamily:"'Unbounded',sans-serif",color:"#fff",fontSize:22,margin:0,fontWeight:900}}>Pick Exercise</h1>
-        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:13,margin:"6px 0 0"}}>Max {DAILY_LIMIT} reps per exercise per day</p>
+        <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:13,margin:"6px 0 0"}}>Every rep earns 1 PEDULI · Max {DAILY_LIMIT} per exercise per day</p>
       </div>
       <div style={{padding:"16px"}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
@@ -720,9 +757,9 @@ function DashboardPage({ user, navigate }) {
   if(!user)return(
     <div style={{minHeight:"100vh",background:T.surface,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,paddingBottom:80,textAlign:"center"}}>
       <div style={{fontSize:64,marginBottom:16}}>🔐</div>
-      <h2 style={{fontFamily:"'Unbounded',sans-serif",fontSize:20,color:"#0f172a",margin:"0 0 8px"}}>Register to Track Rewards</h2>
-      <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:14,color:"#64748b",margin:"0 0 24px"}}>Create a free account to save your PEDULI tokens and link your crypto wallet.</p>
-      <button onClick={()=>navigate("profile")} style={{background:T.primary,color:"#fff",border:"none",borderRadius:14,padding:"14px 32px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>REGISTER NOW →</button>
+      <h2 style={{fontFamily:"'Unbounded',sans-serif",fontSize:20,color:"#0f172a",margin:"0 0 8px"}}>Your Rewards Await</h2>
+      <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:14,color:"#64748b",margin:"0 0 24px",lineHeight:1.6}}>Register to save your PEDULI tokens, link your crypto wallet, and track every rep you've earned.</p>
+      <button onClick={()=>navigate("profile")} style={{background:T.primary,color:"#fff",border:"none",borderRadius:14,padding:"14px 32px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>GET STARTED →</button>
     </div>
   );
   const history=user.history||[];
@@ -903,7 +940,7 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
   const handleLogout=()=>{save("user",null);window.location.reload();};
 
   const titles    ={register:"Register",login:"Welcome Back",forgot:"Reset PIN","change-pin":"Set New PIN",edit:"My Profile"};
-  const subtitles ={register:"Create your free PEDULI account",login:"Sign in to restore your rewards",forgot:"Verify your wallet to reset PIN","change-pin":"Choose a new 4-digit PIN",edit:"Manage your account & wallet"};
+  const subtitles ={register:"Exercise. Earn. Exchange. It starts here.",login:"Sign in to restore your rewards",forgot:"Verify your wallet to reset PIN","change-pin":"Choose a new 4-digit PIN",edit:"Manage your account & wallet",register:"Join PEDULI — free, no capital needed"};
 
   return(
     <div style={{minHeight:"100vh",background:T.surface,paddingBottom:80}}>
