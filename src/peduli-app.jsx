@@ -238,40 +238,17 @@ class RepDetector {
   constructor(id) { this.id=id; this.state="ready"; this.count=0; this.feedback="Get into position!"; this.x={}; }
   process(lm) {
     if (!lm||lm.length<33) return {count:this.count,feedback:this.feedback};
-    ({squats:()=>this._squat(lm),"jumping-jacks":()=>this._jj(lm),"standing-march":()=>this._march(lm),
-  "overhead-press":()=>this._ohp(lm),"side-leg-raises":()=>this._sideLeg(lm),
-  "calf-raises":()=>this._calf(lm),"arm-circles":()=>this._armCircle(lm),
-  "bicycle-crunches":()=>this._bicycle(lm),
-  "side-lunges":()=>this._sideLunge(lm),"side-bend":()=>this._sideBend(lm)})[this.id]?.();
+    ({squats:()=>this._squat(lm),"jumping-jacks":()=>this._jj(lm),
+      "overhead-press":()=>this._ohp(lm),"arm-circles":()=>this._armCircle(lm),
+      "side-lunges":()=>this._sideLunge(lm),"side-bend":()=>this._sideBend(lm)})[this.id]?.();
     return {count:this.count,feedback:this.feedback};
   }
   _squat(lm){const a=calcAngle(lm[23],lm[25],lm[27]);if(a>160&&this.state==="down"){this.count++;this.state="up";this.feedback=`✅ ${this.count} reps! Squat again`;}else if(a<90){this.state="down";this.feedback="⬆️ Now stand back up!";}else if(a>160){this.state="up";this.feedback="⬇️ Bend knees to squat down";}else this.feedback=a>130?"⬇️ Go lower...":"⬆️ Almost there...";}
   _jj(lm){const open=lm[15].y<lm[11].y&&lm[16].y<lm[12].y&&Math.abs(lm[27].x-lm[28].x)>0.22;if(open&&this.state!=="open"){this.state="open";this.feedback="⬇️ Close arms & feet together!";}else if(!open&&this.state==="open"){this.count++;this.state="closed";this.feedback=`✅ ${this.count} reps! Open up!`;}else if(this.state!=="open")this.feedback="⭐ Jump: arms up & legs wide!";}
-  _march(lm){if(!this.x.l)this.x={l:false,r:false};const lH=lm[23].y-lm[25].y>0.07,rH=lm[24].y-lm[26].y>0.07;if(lH&&!this.x.l){this.x.l=true;this.count++;this.feedback=`✅ ${this.count} reps! Right knee!`;}if(!lH)this.x.l=false;if(rH&&!this.x.r){this.x.r=true;this.count++;this.feedback=`✅ ${this.count} reps! Left knee!`;}if(!rH)this.x.r=false;if(!lH&&!rH)this.feedback="🚶 Lift your knees high!";}
   _ohp(lm){const up=lm[15].y<lm[0].y-0.04&&lm[16].y<lm[0].y-0.04,dn=lm[15].y>lm[11].y&&lm[16].y>lm[12].y;if(up&&this.state!=="up"){this.state="up";this.feedback="⬇️ Lower arms to shoulders";}else if(dn&&this.state==="up"){this.count++;this.state="down";this.feedback=`✅ ${this.count} reps! Press up!`;}else if(this.state!=="up")this.feedback="💪 Press both arms overhead!";}
-  _sideLeg(lm){const lR=lm[23].x-lm[27].x>0.14,rR=lm[28].x-lm[24].x>0.14;if((lR||rR)&&this.state!=="up"){this.state="up";this.feedback="⬇️ Lower your leg";}else if(!lR&&!rR&&this.state==="up"){this.count++;this.state="down";this.feedback=`✅ ${this.count} reps! Raise again!`;}else if(this.state!=="up")this.feedback="🦵 Raise one leg to the side!";}
-  _calf(lm){if(!this.x.base)this.x={base:(lm[23].y+lm[24].y)/2,hist:[]};const y=(lm[23].y+lm[24].y)/2;this.x.hist.push(y);if(this.x.hist.length>8)this.x.hist.shift();const s=this.x.hist.reduce((a,b)=>a+b)/this.x.hist.length,rise=this.x.base-s;if(rise>0.018&&this.state!=="up"){this.state="up";this.feedback="⬇️ Lower heels down";}else if(rise<0.004&&this.state==="up"){this.count++;this.state="down";this.feedback=`✅ ${this.count} reps! Rise again!`;this.x.base=s;}else if(this.state!=="up")this.feedback="🦶 Rise on your tiptoes!";}
   _armCircle(lm){const a=Math.atan2(lm[15].y-lm[11].y,lm[15].x-lm[11].x)*180/Math.PI;if(this.x.la!==undefined){let d=a-this.x.la;if(d>180)d-=360;if(d<-180)d+=360;this.x.tot=(this.x.tot||0)+d;if(Math.abs(this.x.tot)>=360){this.count++;this.x.tot=0;this.feedback=`✅ ${this.count} circles! Keep going!`;}else this.feedback=`🔄 ${Math.round(Math.abs(this.x.tot)/360*100)}% circle...`;}else{this.x={la:a,tot:0};this.feedback="🔄 Make big full arm circles!";}this.x.la=a;}
-   _sideLunge(lm){
-  const spread=Math.abs(lm[27].x-lm[28].x);
-  const leftKnee=calcAngle(lm[23],lm[25],lm[27]);
-  const rightKnee=calcAngle(lm[24],lm[26],lm[28]);
-  const bent=Math.min(leftKnee,rightKnee);
-  const isDown=spread>0.28&&bent<125;
-  const isCenter=spread<0.12;
-  if(isDown&&this.state!=="down"){this.state="down";this.feedback="⬆️ Push back to center!";}
-  else if(isCenter&&this.state==="down"){this.count++;this.state="up";this.feedback=`✅ ${this.count} reps! Lunge to the other side!`;}
-  else if(this.state!=="down")this.feedback="🦵 Step wide to one side and bend that knee!";}
-_sideBend(lm){
-  if(!this.x.l)this.x={l:false,r:false};
-  const leftBend=lm[15].y>lm[25].y+0.04;
-  const rightBend=lm[16].y>lm[26].y+0.04;
-  if(leftBend&&!this.x.l){this.x.l=true;this.count++;this.feedback=`✅ ${this.count} reps! Now bend to the right!`;}
-  if(!leftBend)this.x.l=false;
-  if(rightBend&&!this.x.r){this.x.r=true;this.count++;this.feedback=`✅ ${this.count} reps! Now bend to the left!`;}
-  if(!rightBend)this.x.r=false;
-  if(!leftBend&&!rightBend)this.feedback="🙆 Slide one hand slowly down your leg to the side!";}
-  _bicycle(lm){if(!this.x.l)this.x={l:false,r:false};const lc=dist2D(lm[13],lm[26])<0.22,rc=dist2D(lm[14],lm[25])<0.22;if(lc&&!this.x.l){this.x.l=true;this.count++;this.feedback=`✅ ${this.count} reps! Other side!`;}if(!lc)this.x.l=false;if(rc&&!this.x.r){this.x.r=true;this.count++;this.feedback=`✅ ${this.count} reps! Other side!`;}if(!rc)this.x.r=false;if(!lc&&!rc)this.feedback="🚴 Bring elbow to opposite knee!";}
+  _sideLunge(lm){const spread=Math.abs(lm[27].x-lm[28].x);const leftKnee=calcAngle(lm[23],lm[25],lm[27]);const rightKnee=calcAngle(lm[24],lm[26],lm[28]);const bent=Math.min(leftKnee,rightKnee);const isDown=spread>0.28&&bent<125;const isCenter=spread<0.12;if(isDown&&this.state!=="down"){this.state="down";this.feedback="⬆️ Push back to center!";}else if(isCenter&&this.state==="down"){this.count++;this.state="up";this.feedback=`✅ ${this.count} reps! Lunge to the other side!`;}else if(this.state!=="down")this.feedback="🦵 Step wide to one side and bend that knee!";}
+  _sideBend(lm){if(!this.x.l)this.x={l:false,r:false};const leftBend=lm[15].y>lm[25].y+0.04;const rightBend=lm[16].y>lm[26].y+0.04;if(leftBend&&!this.x.l){this.x.l=true;this.count++;this.feedback=`✅ ${this.count} reps! Now bend to the right!`;}if(!leftBend)this.x.l=false;if(rightBend&&!this.x.r){this.x.r=true;this.count++;this.feedback=`✅ ${this.count} reps! Now bend to the left!`;}if(!rightBend)this.x.r=false;if(!leftBend&&!rightBend)this.feedback="🙆 Slide one hand slowly down your leg to the side!";}
 }
 
 /* ──────────────────────────────────────────────
