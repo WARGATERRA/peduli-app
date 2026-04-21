@@ -332,7 +332,7 @@ function HomePage({ navigate, user }) {
   return(
     <div style={{minHeight:"100vh",background:`linear-gradient(160deg,${T.heroFrom} 0%,${T.heroMid} 40%,${T.heroTo} 100%)`,padding:"0 0 80px"}}>
       <div style={{padding:"40px 24px 28px",textAlign:"center"}}>
-        <div style={{fontSize:56,marginBottom:8}}>🤝</div>
+        <img src="/logo.svg" alt="PEDULI" style={{width:90,height:90,marginBottom:8,objectFit:"contain"}}/>
         <h1 onClick={handleTitleTap} style={{fontFamily:"'Unbounded',sans-serif",fontWeight:900,fontSize:32,color:"#fff",margin:"0 0 6px",letterSpacing:"-1px",lineHeight:1.1,cursor:"default",userSelect:"none"}}>PEDULI</h1>
         <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",color:T.glow,fontSize:14,margin:"0 0 20px",fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase"}}>Exercise · Earn · Empower</p>
         {user?(
