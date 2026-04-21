@@ -31,12 +31,8 @@ const T = {
 const EXERCISES = [
   { id: "squats",            name: "Squats",           emoji: "🏋️", color: "#1a5da8", description: "Bend knees to 90° then stand" },
   { id: "jumping-jacks",     name: "Jumping Jacks",    emoji: "⭐", color: "#7c3aed", description: "Jump with arms & legs spread wide" },
-  { id: "standing-march",    name: "Standing March",   emoji: "🚶", color: "#0891b2", description: "Raise each knee high in place" },
   { id: "overhead-press",    name: "Overhead Press",   emoji: "💪", color: "#b45309", description: "Push both arms straight overhead" },
-  { id: "side-leg-raises",   name: "Side Leg Raises",  emoji: "🦵", color: "#0d6e8c", description: "Lift one leg sideways off floor" },
-  { id: "calf-raises",       name: "Calf Raises",      emoji: "🦶", color: "#0f766e", description: "Rise on tiptoes then lower down" },
   { id: "arm-circles",       name: "Arm Circles",      emoji: "🔄", color: "#6d3fa0", description: "Swing arms in full big circles" },
-  { id: "bicycle-crunches",  name: "Bicycle Crunches", emoji: "🚴", color: "#1d4ed8", description: "Twist elbow to opposite knee" },
 ];
 
 const DAILY_LIMIT = 100;
