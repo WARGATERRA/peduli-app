@@ -485,7 +485,7 @@ function HomePage({ navigate, user }) {
       {/* ── STATS STRIP ── */}
       <div style={{padding:"0 16px 16px"}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-          {[["🏋️","4","Exercises"],["🪙","1:1","Rep to Token"],["📅","100","Daily Max"]].map(([icon,val,label])=>(
+          {[["🏋️",EXERCISES.length,"Exercises"],["🪙","1:1","Rep to Token"],["📅","100","Daily Max"]].map(([icon,val,label])=>(
             <div key={label} style={{background:"rgba(255,255,255,0.04)",borderRadius:14,padding:"12px 8px",textAlign:"center",border:"1px solid rgba(255,255,255,0.07)"}}>
               <p style={{fontSize:18,margin:"0 0 4px"}}>{icon}</p>
               <p style={{fontFamily:"'Unbounded',sans-serif",color:"#fff",fontSize:14,margin:"0 0 2px",fontWeight:900}}>{val}</p>
