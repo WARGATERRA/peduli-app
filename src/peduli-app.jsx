@@ -29,12 +29,12 @@ const T = {
    CONSTANTS
 ──────────────────────────────────────────────── */
 const EXERCISES = [
-  { id: "squats",         name: "Squats",              emoji: "🏋️", color: "#1a5da8", description: "Bend knees to 90° then stand" },
-  { id: "jumping-jacks",  name: "Jumping Jacks",        emoji: "⭐", color: "#7c3aed", description: "Jump with arms & legs spread wide" },
-  { id: "overhead-press", name: "Overhead Press",       emoji: "💪", color: "#b45309", description: "Push both arms straight overhead" },
-  { id: "arm-circles",    name: "Arm Circles",          emoji: "🔄", color: "#6d3fa0", description: "Swing arms in full big circles" },
-  { id: "waist-circles",  name: "Waist Circles",        emoji: "🌀", color: "#0f766e", description: "Rotate your hips in big slow circles" },
-  { id: "toe-touch",      name: "Toe Touch Hold",       emoji: "🙇", color: "#be185d", description: "Bend down and hold — counts seconds, not reps" },
+  { id: "squats",              name: "Squats",              emoji: "🏋️", color: "#1a5da8", description: "Bend knees to 90° then stand" },
+  { id: "jumping-jacks",       name: "Jumping Jacks",       emoji: "⭐", color: "#7c3aed", description: "Jump with arms & legs spread wide" },
+  { id: "overhead-press",      name: "Overhead Press",      emoji: "💪", color: "#b45309", description: "Push both arms straight overhead" },
+  { id: "arm-circles",         name: "Arm Circles",         emoji: "🔄", color: "#6d3fa0", description: "Swing arms in full big circles" },
+  { id: "high-knees",          name: "High Knees",          emoji: "🏃", color: "#0f766e", description: "Lift each knee up to hip height alternating" },
+  { id: "lateral-arm-raises",  name: "Lateral Arm Raises",  emoji: "🦅", color: "#be185d", description: "Raise both arms out to shoulder height then lower" },
 ];
 
 const DAILY_LIMIT = 100;
