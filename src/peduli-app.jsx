@@ -29,12 +29,12 @@ const T = {
    CONSTANTS
 ──────────────────────────────────────────────── */
 const EXERCISES = [
-  { id: "squats",              name: "Squats",              emoji: "🏋️", color: "#1a5da8", description: "Bend knees to 90° then stand" },
-  { id: "jumping-jacks",       name: "Jumping Jacks",       emoji: "⭐", color: "#7c3aed", description: "Jump with arms & legs spread wide" },
-  { id: "overhead-press",      name: "Overhead Press",      emoji: "💪", color: "#b45309", description: "Push both arms straight overhead" },
-  { id: "arm-circles",         name: "Arm Circles",         emoji: "🔄", color: "#6d3fa0", description: "Swing arms in full big circles" },
-  { id: "high-knees",          name: "High Knees",          emoji: "🏃", color: "#0f766e", description: "Lift each knee up to hip height alternating" },
-  { id: "lateral-arm-raises",  name: "Lateral Arm Raises",  emoji: "🦅", color: "#be185d", description: "Raise both arms out to shoulder height then lower" },
+  { id: "squats",             name: "Squats",             emoji: "🏋️", color: "#1a5da8", description: "Bend knees to 90° then stand" },
+  { id: "jumping-jacks",      name: "Jumping Jacks",      emoji: "⭐", color: "#7c3aed", description: "Jump with arms & legs spread wide" },
+  { id: "overhead-press",     name: "Overhead Press",     emoji: "💪", color: "#b45309", description: "Push both arms straight overhead" },
+  { id: "arm-circles",        name: "Arm Circles",        emoji: "🔄", color: "#6d3fa0", description: "Swing arms in full big circles" },
+  { id: "marching",           name: "Marching",           emoji: "🚶", color: "#0f766e", description: "Lift each knee up to hip height, march in place" },
+  { id: "lateral-arm-raises", name: "Lateral Arm Raises", emoji: "🦅", color: "#be185d", description: "Raise both arms out to shoulder height then lower" },
 ];
 
 const DAILY_LIMIT = 100;
@@ -240,14 +240,14 @@ class RepDetector {
     if (!lm||lm.length<33) return {count:this.count,feedback:this.feedback};
     ({squats:()=>this._squat(lm),"jumping-jacks":()=>this._jj(lm),
       "overhead-press":()=>this._ohp(lm),"arm-circles":()=>this._armCircle(lm),
-      "high-knees":()=>this._highKnees(lm),"lateral-arm-raises":()=>this._lateralRaise(lm)})[this.id]?.();
+      "marching":()=>this._marching(lm),"lateral-arm-raises":()=>this._lateralRaise(lm)})[this.id]?.();
     return {count:this.count,feedback:this.feedback};
   }
   _squat(lm){const a=calcAngle(lm[23],lm[25],lm[27]);if(a>160&&this.state==="down"){this.count++;this.state="up";this.feedback=`✅ ${this.count} reps! Squat again`;}else if(a<90){this.state="down";this.feedback="⬆️ Now stand back up!";}else if(a>160){this.state="up";this.feedback="⬇️ Bend knees to squat down";}else this.feedback=a>130?"⬇️ Go lower...":"⬆️ Almost there...";}
   _jj(lm){const open=lm[15].y<lm[11].y&&lm[16].y<lm[12].y&&Math.abs(lm[27].x-lm[28].x)>0.22;if(open&&this.state!=="open"){this.state="open";this.feedback="⬇️ Close arms & feet together!";}else if(!open&&this.state==="open"){this.count++;this.state="closed";this.feedback=`✅ ${this.count} reps! Open up!`;}else if(this.state!=="open")this.feedback="⭐ Jump: arms up & legs wide!";}
   _ohp(lm){const up=lm[15].y<lm[0].y-0.04&&lm[16].y<lm[0].y-0.04,dn=lm[15].y>lm[11].y&&lm[16].y>lm[12].y;if(up&&this.state!=="up"){this.state="up";this.feedback="⬇️ Lower arms to shoulders";}else if(dn&&this.state==="up"){this.count++;this.state="down";this.feedback=`✅ ${this.count} reps! Press up!`;}else if(this.state!=="up")this.feedback="💪 Press both arms overhead!";}
   _armCircle(lm){const a=Math.atan2(lm[15].y-lm[11].y,lm[15].x-lm[11].x)*180/Math.PI;if(this.x.la!==undefined){let d=a-this.x.la;if(d>180)d-=360;if(d<-180)d+=360;this.x.tot=(this.x.tot||0)+d;if(Math.abs(this.x.tot)>=360){this.count++;this.x.tot=0;this.feedback=`✅ ${this.count} circles! Keep going!`;}else this.feedback=`🔄 ${Math.round(Math.abs(this.x.tot)/360*100)}% circle...`;}else{this.x={la:a,tot:0};this.feedback="🔄 Make big full arm circles!";}this.x.la=a;}
-  _highKnees(lm){if(!this.x.l)this.x={l:false,r:false};const lKneeAboveHip=lm[25].y<lm[23].y-0.04,rKneeAboveHip=lm[26].y<lm[24].y-0.04;if(lKneeAboveHip&&!this.x.l){this.x.l=true;this.count++;this.feedback=`✅ ${this.count} reps! Right knee!`;}if(!lKneeAboveHip)this.x.l=false;if(rKneeAboveHip&&!this.x.r){this.x.r=true;this.count++;this.feedback=`✅ ${this.count} reps! Left knee!`;}if(!rKneeAboveHip)this.x.r=false;if(!lKneeAboveHip&&!rKneeAboveHip)this.feedback="🏃 Drive your knees up to hip height!";}
+  _marching(lm){if(!this.x.l)this.x={l:false,r:false,lt:0,rt:0};const now=Date.now();const lKneeAboveHip=lm[25].y<lm[23].y-0.04,rKneeAboveHip=lm[26].y<lm[24].y-0.04;if(lKneeAboveHip&&!this.x.l&&(now-this.x.lt)>500){this.x.l=true;this.x.lt=now;this.count++;this.feedback=`✅ ${this.count} reps! Other leg!`;}if(!lKneeAboveHip)this.x.l=false;if(rKneeAboveHip&&!this.x.r&&(now-this.x.rt)>500){this.x.r=true;this.x.rt=now;this.count++;this.feedback=`✅ ${this.count} reps! Other leg!`;}if(!rKneeAboveHip)this.x.r=false;if(!lKneeAboveHip&&!rKneeAboveHip)this.feedback="🚶 March in place — lift those knees!";}
   _lateralRaise(lm){const lUp=lm[15].y<lm[11].y+0.02,rUp=lm[16].y<lm[12].y+0.02;const bothUp=lUp&&rUp;const bothDown=lm[15].y>lm[23].y&&lm[16].y>lm[24].y;if(bothUp&&this.state!=="up"){this.state="up";this.feedback="⬇️ Lower arms back down!";}else if(bothDown&&this.state==="up"){this.count++;this.state="down";this.feedback=`✅ ${this.count} reps! Raise again!`;}else if(this.state!=="up")this.feedback="🦅 Raise both arms out to your sides!";}
 }
 
