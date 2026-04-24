@@ -29,12 +29,12 @@ const T = {
    CONSTANTS
 ──────────────────────────────────────────────── */
 const EXERCISES = [
-  { id: "squats",            name: "Squats",           emoji: "🏋️", color: "#1a5da8", description: "Bend knees to 90° then stand" },
-  { id: "jumping-jacks",     name: "Jumping Jacks",    emoji: "⭐", color: "#7c3aed", description: "Jump with arms & legs spread wide" },
-  { id: "overhead-press",    name: "Overhead Press",   emoji: "💪", color: "#b45309", description: "Push both arms straight overhead" },
-  { id: "arm-circles",       name: "Arm Circles",      emoji: "🔄", color: "#6d3fa0", description: "Swing arms in full big circles" },
-  { id: "side-lunges",       name: "Side Lunges",      emoji: "🦵", color: "#0f766e", description: "Step wide to each side, bend that knee" },
-  { id: "side-bend",         name: "Side Bend Stretch",emoji: "🙆", color: "#be185d", description: "Slide one hand down your leg, alternate sides" },
+  { id: "squats",         name: "Squats",              emoji: "🏋️", color: "#1a5da8", description: "Bend knees to 90° then stand" },
+  { id: "jumping-jacks",  name: "Jumping Jacks",        emoji: "⭐", color: "#7c3aed", description: "Jump with arms & legs spread wide" },
+  { id: "overhead-press", name: "Overhead Press",       emoji: "💪", color: "#b45309", description: "Push both arms straight overhead" },
+  { id: "arm-circles",    name: "Arm Circles",          emoji: "🔄", color: "#6d3fa0", description: "Swing arms in full big circles" },
+  { id: "waist-circles",  name: "Waist Circles",        emoji: "🌀", color: "#0f766e", description: "Rotate your hips in big slow circles" },
+  { id: "toe-touch",      name: "Toe Touch Hold",       emoji: "🙇", color: "#be185d", description: "Bend down and hold — counts seconds, not reps" },
 ];
 
 const DAILY_LIMIT = 100;
@@ -240,15 +240,15 @@ class RepDetector {
     if (!lm||lm.length<33) return {count:this.count,feedback:this.feedback};
     ({squats:()=>this._squat(lm),"jumping-jacks":()=>this._jj(lm),
       "overhead-press":()=>this._ohp(lm),"arm-circles":()=>this._armCircle(lm),
-      "side-lunges":()=>this._sideLunge(lm),"side-bend":()=>this._sideBend(lm)})[this.id]?.();
+      "waist-circles":()=>this._waistCircle(lm),"toe-touch":()=>this._toeTouch(lm)})[this.id]?.();
     return {count:this.count,feedback:this.feedback};
   }
   _squat(lm){const a=calcAngle(lm[23],lm[25],lm[27]);if(a>160&&this.state==="down"){this.count++;this.state="up";this.feedback=`✅ ${this.count} reps! Squat again`;}else if(a<90){this.state="down";this.feedback="⬆️ Now stand back up!";}else if(a>160){this.state="up";this.feedback="⬇️ Bend knees to squat down";}else this.feedback=a>130?"⬇️ Go lower...":"⬆️ Almost there...";}
   _jj(lm){const open=lm[15].y<lm[11].y&&lm[16].y<lm[12].y&&Math.abs(lm[27].x-lm[28].x)>0.22;if(open&&this.state!=="open"){this.state="open";this.feedback="⬇️ Close arms & feet together!";}else if(!open&&this.state==="open"){this.count++;this.state="closed";this.feedback=`✅ ${this.count} reps! Open up!`;}else if(this.state!=="open")this.feedback="⭐ Jump: arms up & legs wide!";}
   _ohp(lm){const up=lm[15].y<lm[0].y-0.04&&lm[16].y<lm[0].y-0.04,dn=lm[15].y>lm[11].y&&lm[16].y>lm[12].y;if(up&&this.state!=="up"){this.state="up";this.feedback="⬇️ Lower arms to shoulders";}else if(dn&&this.state==="up"){this.count++;this.state="down";this.feedback=`✅ ${this.count} reps! Press up!`;}else if(this.state!=="up")this.feedback="💪 Press both arms overhead!";}
   _armCircle(lm){const a=Math.atan2(lm[15].y-lm[11].y,lm[15].x-lm[11].x)*180/Math.PI;if(this.x.la!==undefined){let d=a-this.x.la;if(d>180)d-=360;if(d<-180)d+=360;this.x.tot=(this.x.tot||0)+d;if(Math.abs(this.x.tot)>=360){this.count++;this.x.tot=0;this.feedback=`✅ ${this.count} circles! Keep going!`;}else this.feedback=`🔄 ${Math.round(Math.abs(this.x.tot)/360*100)}% circle...`;}else{this.x={la:a,tot:0};this.feedback="🔄 Make big full arm circles!";}this.x.la=a;}
-  _sideLunge(lm){const spread=Math.abs(lm[27].x-lm[28].x);const leftKnee=calcAngle(lm[23],lm[25],lm[27]);const rightKnee=calcAngle(lm[24],lm[26],lm[28]);const bent=Math.min(leftKnee,rightKnee);const isDown=spread>0.28&&bent<125;const isCenter=spread<0.12;if(isDown&&this.state!=="down"){this.state="down";this.feedback="⬆️ Push back to center!";}else if(isCenter&&this.state==="down"){this.count++;this.state="up";this.feedback=`✅ ${this.count} reps! Lunge to the other side!`;}else if(this.state!=="down")this.feedback="🦵 Step wide to one side and bend that knee!";}
-  _sideBend(lm){if(!this.x.l)this.x={l:false,r:false};const leftBend=lm[15].y>lm[25].y+0.04;const rightBend=lm[16].y>lm[26].y+0.04;if(leftBend&&!this.x.l){this.x.l=true;this.count++;this.feedback=`✅ ${this.count} reps! Now bend to the right!`;}if(!leftBend)this.x.l=false;if(rightBend&&!this.x.r){this.x.r=true;this.count++;this.feedback=`✅ ${this.count} reps! Now bend to the left!`;}if(!rightBend)this.x.r=false;if(!leftBend&&!rightBend)this.feedback="🙆 Slide one hand slowly down your leg to the side!";}
+  _waistCircle(lm){const hx=(lm[23].x+lm[24].x)/2,hy=(lm[23].y+lm[24].y)/2,sx=(lm[11].x+lm[12].x)/2,sy=(lm[11].y+lm[12].y)/2;const a=Math.atan2(hy-sy,hx-sx)*180/Math.PI;if(this.x.la!==undefined){let d=a-this.x.la;if(d>180)d-=360;if(d<-180)d+=360;this.x.tot=(this.x.tot||0)+d;if(Math.abs(this.x.tot)>=300){this.count++;this.x.tot=0;this.feedback=`✅ ${this.count} circles! Keep going!`;}else this.feedback=`🌀 ${Math.round(Math.abs(this.x.tot)/300*100)}% circle...`;}else{this.x={la:a,tot:0};this.feedback="🌀 Rotate your hips in big slow circles!";}this.x.la=a;}
+  _toeTouch(lm){if(!this.x.elapsed)this.x={elapsed:0,lastTime:null};const wristMidY=(lm[15].y+lm[16].y)/2,kneeMidY=(lm[25].y+lm[26].y)/2,isDown=wristMidY>kneeMidY+0.02;const now=Date.now();if(isDown){if(this.x.lastTime){const delta=(now-this.x.lastTime)/1000;if(delta<0.5)this.x.elapsed+=delta;}this.x.lastTime=now;this.count=Math.floor(this.x.elapsed);this.feedback=`⏱️ Holding! ${this.count}s — keep reaching down!`;}else{this.x.lastTime=null;this.feedback=this.x.elapsed>0?`⏸️ Paused at ${Math.floor(this.x.elapsed)}s — bend back down!`:"🙇 Bend forward and reach toward your toes!";}}
 }
 
 /* ──────────────────────────────────────────────
