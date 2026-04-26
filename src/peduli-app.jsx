@@ -1343,22 +1343,32 @@ function DisclaimerPage() {
   </Card>
 ))}
 
-            <Card style={{ marginBottom: 14, background: T.primaryBg, border: `1.5px solid ${T.primaryBrd}` }}>
-  <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 10, color: T.primary, margin: "0 0 12px", letterSpacing: "0.06em" }}>
+   <Card style={{ marginBottom: 14, background: T.primaryBg, border: `1.5px solid ${T.primaryBrd}` }}>
+  <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 10, color: T.primary, margin: "0 0 10px", letterSpacing: "0.06em" }}>
     GET IN TOUCH
   </p>
   <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#475569", margin: "0 0 14px", lineHeight: 1.7 }}>
-    Questions about PEDULI? Want to contribute to the liquidity pool or discuss a CSR partnership? Join our community.
+    Questions about PEDULI? Want to contribute to the liquidity pool or discuss a CSR partnership? Reach out to us.
   </p>
-  <a href="https://t.me/+DBI3CyPsDWQwMTI1"
-    target="_blank" rel="noopener noreferrer"
-    style={{ display: "flex", alignItems: "center", gap: 10, background: T.surface, border: `1px solid ${T.primaryPale}`, borderRadius: 10, padding: "12px 14px", textDecoration: "none" }}>
-    <span style={{ fontSize: 20 }}>✈️</span>
-    <div>
-      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#64748b", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Telegram Community</p>
-      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, color: T.primary, margin: 0, fontWeight: 700 }}>Join the PEDULI Community →</p>
-    </div>
-  </a>
+  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <a href="https://t.me/+DBI3CyPsDWQwMTI1"
+      target="_blank" rel="noopener noreferrer"
+      style={{ display: "flex", alignItems: "center", gap: 10, background: T.surface, border: `1px solid ${T.primaryPale}`, borderRadius: 10, padding: "12px 14px", textDecoration: "none" }}>
+      <span style={{ fontSize: 20 }}>✈️</span>
+      <div>
+        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#64748b", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Telegram Community</p>
+        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, color: T.primary, margin: 0, fontWeight: 700 }}>Join the PEDULI Community →</p>
+      </div>
+    </a>
+    <a href="mailto:wargaterra@gmail.com"
+      style={{ display: "flex", alignItems: "center", gap: 10, background: T.surface, border: `1px solid ${T.primaryPale}`, borderRadius: 10, padding: "12px 14px", textDecoration: "none" }}>
+      <span style={{ fontSize: 20 }}>📧</span>
+      <div>
+        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#64748b", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Email Us</p>
+        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, color: T.primary, margin: 0, fontWeight: 700 }}>wargaterra@gmail.com</p>
+      </div>
+    </a>
+  </div>
 </Card>
 
 <Card style={{ background: "#f8fafc", textAlign: "center" }}>
