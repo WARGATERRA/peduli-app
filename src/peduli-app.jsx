@@ -1360,12 +1360,21 @@ function DisclaimerPage() {
         <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, color: T.primary, margin: 0, fontWeight: 700 }}>Join the PEDULI Community →</p>
       </div>
     </a>
-    <a href="mailto:wargaterra@gmail.com"
+    <a href="mailto:hello@peduli.app"
       style={{ display: "flex", alignItems: "center", gap: 10, background: T.surface, border: `1px solid ${T.primaryPale}`, borderRadius: 10, padding: "12px 14px", textDecoration: "none" }}>
       <span style={{ fontSize: 20 }}>📧</span>
       <div>
         <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#64748b", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Email Us</p>
-        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, color: T.primary, margin: 0, fontWeight: 700 }}>wargaterra@gmail.com</p>
+        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, color: T.primary, margin: 0, fontWeight: 700 }}>hello@peduli.app</p>
+      </div>
+    </a>
+    <a href="https://www.linkedin.com/in/fauzanbaharudin"
+      target="_blank" rel="noopener noreferrer"
+      style={{ display: "flex", alignItems: "center", gap: 10, background: T.surface, border: `1px solid ${T.primaryPale}`, borderRadius: 10, padding: "12px 14px", textDecoration: "none" }}>
+      <span style={{ fontSize: 20 }}>💼</span>
+      <div>
+        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#64748b", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Founder · LinkedIn</p>
+        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, color: T.primary, margin: 0, fontWeight: 700 }}>View Profile →</p>
       </div>
     </a>
   </div>
