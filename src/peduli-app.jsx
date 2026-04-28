@@ -1373,7 +1373,7 @@ function DisclaimerPage() {
       style={{ display: "flex", alignItems: "center", gap: 10, background: T.surface, border: `1px solid ${T.primaryPale}`, borderRadius: 10, padding: "12px 14px", textDecoration: "none" }}>
       <span style={{ fontSize: 20 }}>💼</span>
       <div>
-        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#64748b", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Founder · LinkedIn</p>
+        <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#64748b", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Founder · Fauzan Baharudin · LinkedIn</p>
         <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, color: T.primary, margin: 0, fontWeight: 700 }}>View Profile →</p>
       </div>
     </a>
