@@ -436,7 +436,7 @@ function HomePage({ navigate, user, setProfileMode }) {
               <p style={{fontFamily:"'Unbounded',sans-serif",fontSize:13,color:"#fff",margin:"0 0 6px",fontWeight:700}}>{activeUseCase.hook}</p>
               <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#94a3b8",margin:"0 0 14px",lineHeight:1.7}}>{activeUseCase.desc}</p>
               {activeUseCase.id==="csr"?(
-                <a href="https://app.uniswap.org/explore/tokens/polygon/0xae9abf1090eb04e1b6e83851013c3d8f1189d8c9"
+                <a href="https://app.uniswap.org/explore/pools/polygon/0x02ef23fd95cb61a1a5e21d63e4eead4b99a766996ca4f96a6b5f018efba945f4?chart=price"
                   target="_blank" rel="noopener noreferrer"
                   style={{display:"block",width:"100%",background:activeUseCase.color,color:"#fff",border:"none",borderRadius:12,padding:"12px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",textDecoration:"none",boxSizing:"border-box"}}>
                   💧 OPEN UNISWAP →
@@ -1468,7 +1468,7 @@ function DisclaimerPage() {
                   </div>
                   <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:T.glow,fontWeight:600}}>View →</span>
                 </a>
-                <a href="https://app.uniswap.org/explore/tokens/polygon/0xae9abf1090eb04e1b6e83851013c3d8f1189d8c9"
+                <a href="https://app.uniswap.org/explore/pools/polygon/0x02ef23fd95cb61a1a5e21d63e4eead4b99a766996ca4f96a6b5f018efba945f4?chart=price"
                   target="_blank" rel="noopener noreferrer"
                   style={{display:"flex",alignItems:"center",gap:10,background:"#1e2d40",border:"1px solid #2d4a6e",borderRadius:10,padding:"12px 14px",textDecoration:"none"}}>
                   <img src="/Uniswap_icon_pink.png" alt="Uniswap" style={{width:28,height:28,borderRadius:6}}/>
