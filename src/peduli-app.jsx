@@ -1447,6 +1447,63 @@ function DisclaimerPage() {
               </div>
             </Card>
 
+            <Card style={{ marginBottom: 14, background: "#fff8f0", border: "1.5px solid #fed7aa" }}>
+              <p style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 10, color: "#92400e", margin: "0 0 12px", letterSpacing: "0.06em" }}>👛 HOW TO SEE PEDULI IN YOUR WALLET</p>
+              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#78350f", margin: "0 0 14px", lineHeight: 1.7 }}>
+                Your PEDULI tokens are on the Polygon network. If you can't see them in MetaMask or Trust Wallet, you need to add the token manually. This is normal — it does not mean your tokens are lost!
+              </p>
+
+              {/* MetaMask Steps */}
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 700, fontSize: 12, color: "#92400e", margin: "0 0 10px", display: "flex", alignItems: "center", gap: 6 }}>
+                  🦊 MetaMask
+                </p>
+                {[
+                  "Open MetaMask and make sure you are on the Polygon network",
+                  "Scroll down and tap \"Import tokens\"",
+                  "Paste the contract address below into the Token Address field",
+                  "Token Symbol (PEDULI) and Decimals (18) will fill in automatically",
+                  "Tap \"Add Custom Token\" then \"Import Tokens\"",
+                  "Your PEDULI balance will now appear! 🎉",
+                ].map((step, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8, alignItems: "flex-start" }}>
+                    <div style={{ background: "#f97316", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                      <span style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 9, color: "#fff", fontWeight: 700 }}>{i + 1}</span>
+                    </div>
+                    <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#78350f", margin: 0, lineHeight: 1.6 }}>{step}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Trust Wallet Steps */}
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 700, fontSize: 12, color: "#92400e", margin: "0 0 10px", display: "flex", alignItems: "center", gap: 6 }}>
+                  🛡️ Trust Wallet
+                </p>
+                {[
+                  "Open Trust Wallet and switch to Polygon network",
+                  "Tap the search icon at the top and search \"PEDULI\"",
+                  "If not found, tap \"Add Custom Token\"",
+                  "Set Network to \"Polygon\", paste the contract address below",
+                  "Tap \"Done\" — your PEDULI balance will appear! 🎉",
+                ].map((step, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8, alignItems: "flex-start" }}>
+                    <div style={{ background: "#3b82f6", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                      <span style={{ fontFamily: "'Unbounded',sans-serif", fontSize: 9, color: "#fff", fontWeight: 700 }}>{i + 1}</span>
+                    </div>
+                    <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: "#78350f", margin: 0, lineHeight: 1.6 }}>{step}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Contract address to copy */}
+              <div style={{ background: "#1e2d40", borderRadius: 10, padding: "12px 14px" }}>
+                <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 10, color: "#94a3b8", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.06em" }}>PEDULI Contract Address (Polygon)</p>
+                <p style={{ fontFamily: "monospace", fontSize: 11, color: "#60a5fa", margin: "0 0 8px", wordBreak: "break-all", lineHeight: 1.7 }}>{PEDULI_CONTRACT}</p>
+                <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 10, color: "#64748b", margin: 0 }}>⚠️ Always verify this matches before importing. Never import a token from an unknown source.</p>
+              </div>
+            </Card>
+
             <Card style={{ background: "#f8fafc", textAlign: "center" }}>
               <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, color: "#94a3b8", margin: 0, lineHeight: 1.7 }}>
                 © {new Date().getFullYear()} <strong style={{ color: "#475569" }}>WARGATERRA</strong>. All rights reserved.<br />
