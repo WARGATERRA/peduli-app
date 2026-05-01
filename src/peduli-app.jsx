@@ -1016,7 +1016,7 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
 
   const handleForgot = async () => {
     if(!fEmail.includes("@"))return setError("Please enter your registered email.");
-    if(!isValidWallet(fWallet))return setError("Please enter your full wallet address (42 characters starting with 0x).");
+    if(fWallet && !isValidWallet(fWallet))return setError("Please enter a valid wallet address (42 characters starting with 0x).");
     clr();setBusy(true);
     const result=await apiResetPin(fEmail.trim().toLowerCase(),fWallet.trim());
     setBusy(false);
@@ -1120,6 +1120,9 @@ function ProfilePage({ user, saveUser, navigate, startMode }) {
             <input style={inp} type="email" value={fEmail} onChange={e=>{setFEmail(e.target.value);clr();}} placeholder="your@email.com"/>
             <label style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#64748b",display:"block",marginBottom:4}}>Your Registered Wallet Address</label>
             <WalletInput value={fWallet} onChange={v=>{setFWallet(v);clr();}} inputStyle={inp}/>
+            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#94a3b8",margin:"-8px 0 12px",lineHeight:1.6}}>
+              💡 If you registered without a wallet, leave this field empty.
+            </p>
             {error&&<div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:10,padding:"10px 14px",margin:"8px 0 12px"}}><p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:"#dc2626",margin:0}}>{error}</p></div>}
             {success&&<div style={{background:T.primaryBg,border:`1px solid ${T.glow}`,borderRadius:10,padding:"10px 14px",margin:"8px 0 12px"}}><p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:T.primary,margin:0}}>{success}</p></div>}
             <button onClick={handleForgot} disabled={busy}
