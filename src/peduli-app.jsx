@@ -1418,9 +1418,23 @@ function DisclaimerPage() {
                 <p style={{ fontFamily: "monospace", fontSize: 11, color: "#60a5fa", margin: 0, wordBreak: "break-all", lineHeight: 1.7 }}>{PEDULI_CONTRACT}</p>
               </div>
               <a href={`https://polygonscan.com/token/${PEDULI_CONTRACT}`} target="_blank" rel="noopener noreferrer"
-                style={{ display: "inline-block", fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 12, color: T.glow, fontWeight: 600, textDecoration: "none" }}>
+                style={{display:"inline-block",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:T.glow,fontWeight:600,textDecoration:"none"}}>
                 🔍 Verify on PolygonScan →
               </a>
+
+              <div style={{marginTop:16,paddingTop:16,borderTop:"1px solid #1e3a5f"}}>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,color:T.glow,margin:"0 0 10px",textTransform:"uppercase",letterSpacing:"0.06em"}}>📊 Live Market Data</p>
+                <a href="https://www.geckoterminal.com/polygon_pos/pools/0x02ef23fd95cb61a1a5e21d63e4eead4b99a766996ca4f96a6b5f018efba945f4"
+                  target="_blank" rel="noopener noreferrer"
+                  style={{display:"flex",alignItems:"center",gap:10,background:"#1e2d40",border:"1px solid #2d4a6e",borderRadius:10,padding:"12px 14px",textDecoration:"none"}}>
+                  <img src="/geckoterminal_favicon.png" alt="GeckoTerminal" style={{width:28,height:28,borderRadius:6}}/>
+                  <div style={{flex:1}}>
+                    <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:13,color:"#fff",margin:0,fontWeight:700}}>GeckoTerminal</p>
+                    <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:10,color:"#94a3b8",margin:0}}>Live PEDULI price & on-chain trading data</p>
+                  </div>
+                  <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:T.glow,fontWeight:600}}>View →</span>
+                </a>
+              </div>
             </Card>
 
             <Card style={{ background: "#f8fafc", textAlign: "center" }}>
