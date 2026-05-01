@@ -401,6 +401,21 @@ function HomePage({ navigate, user, setProfileMode }) {
         )}
       </div>
 
+       {/* ── No wallet warning banner ── */}
+      {user && !user.wallet && (
+        <div style={{margin:"0 16px 16px",background:"#fff8f0",border:"1.5px solid #fed7aa",borderRadius:16,padding:"14px 16px",display:"flex",gap:12,alignItems:"flex-start"}}>
+          <span style={{fontSize:22,flexShrink:0}}>⚠️</span>
+          <div style={{flex:1}}>
+            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:13,color:"#92400e",margin:"0 0 4px"}}>Wallet not linked yet</p>
+            <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#78350f",margin:"0 0 10px",lineHeight:1.6}}>Add your Polygon wallet address to start earning PEDULI tokens. Without it, completed exercises will not send any tokens to you.</p>
+            <button onClick={()=>navigate("profile")}
+              style={{background:"#f97316",color:"#fff",border:"none",borderRadius:10,padding:"8px 16px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              Add Wallet Now →
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── USE CASES ── */}
       <div style={{padding:"0 16px 16px"}}>
         <div style={{background:"rgba(255,255,255,0.04)",borderRadius:24,padding:"20px 16px",border:"1px solid rgba(255,255,255,0.08)"}}>
@@ -543,10 +558,26 @@ function ExerciseSelectPage({ navigate, user, getDailyRemaining }) {
               <TokenBadge amount={target}/>
             </div>
             {!user&&<p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,color:"#92400e",background:T.accentBg,border:`1px solid ${T.accentBrd}`,borderRadius:8,padding:"8px 12px",margin:"0 0 12px"}}>⚠️ Register to save your token rewards!</p>}
-            <button onClick={()=>navigate("exercise",{exercise:selected,target})}
-              style={{width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:14,padding:"16px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",letterSpacing:"0.02em"}}>
-              🎬 START EXERCISE
-            </button>
+            {user&&!user.wallet&&(
+              <div style={{background:"#fff8f0",border:"1.5px solid #fed7aa",borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,color:"#92400e",margin:"0 0 4px"}}>⚠️ No wallet linked — tokens will not be sent</p>
+                <p style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,color:"#78350f",margin:"0 0 10px",lineHeight:1.6}}>You can still try the exercise, but you will not receive any PEDULI tokens without a Polygon wallet address.</p>
+                <button onClick={()=>navigate("profile")}
+                  style={{width:"100%",background:"#f97316",color:"#fff",border:"none",borderRadius:8,padding:"8px 14px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:8}}>
+                  Add Wallet First →
+                </button>
+                <button onClick={()=>navigate("exercise",{exercise:selected,target})}
+                  style={{width:"100%",background:"transparent",color:"#92400e",border:"1px solid #fed7aa",borderRadius:12,padding:"12px",fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:600,fontSize:13,cursor:"pointer"}}>
+                  Continue Anyway (No Tokens)
+                </button>
+              </div>
+            )}
+            {(!user||user.wallet)&&(
+              <button onClick={()=>navigate("exercise",{exercise:selected,target})}
+                style={{width:"100%",background:`linear-gradient(135deg,${T.primary},${T.primaryLt})`,color:"#fff",border:"none",borderRadius:14,padding:"16px",fontFamily:"'Unbounded',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",letterSpacing:"0.02em"}}>
+                🎬 START EXERCISE
+              </button>
+            )}
           </Card>
         )}
       </div>
